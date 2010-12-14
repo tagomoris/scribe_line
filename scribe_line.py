@@ -53,7 +53,7 @@ while True:
         except IOError:
             if len(lines) == 0 or (len(lines) == 1 and lines[0] == ''):
                 lines = []
-                time.sleep(0.5)
+                time.sleep(DEFAULT_RETRY_LOG_WATCH)
                 continue
     try:
         sock = TSocket.TSocket(host=host, port=int(port))
@@ -69,7 +69,7 @@ while True:
             if result == scribe.ResultCode.OK:
                 break
             elif result == scribe.ResultCode.TRY_LATER:
-                time.sleep(DEFAULT_RETRY_WAIT)
+                time.sleep(DEFAULT_RETRY_CONNECT)
             else:
                 inbuffer_logs.insert(0, line)
                 raise TTransportException, TTransportException.UNKNOWN, "Unknown result code: %d." % result
