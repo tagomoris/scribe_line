@@ -40,6 +40,8 @@ category = sys.argv[-1]
 inbuffer_logs = []
 
 while True:
+    if sys.stdin.closed:
+        break
     try:
         transport = TTransport.TFramedTransport(TSocket.TSocket(host=host, port=int(port)))
         protocol = TBinaryProtocol.TBinaryProtocol(trans=transport, strictRead=False, strictWrite=False)
