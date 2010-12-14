@@ -43,8 +43,9 @@ while True:
     if sys.stdin.closed:
         break
     try:
+        sock = TSocket.TSocket(host=host, port=int(port))
         for line in sys.stdin:
-            transport = TTransport.TFramedTransport(TSocket.TSocket(host=host, port=int(port)))
+            transport = TTransport.TFramedTransport(sock)
             protocol = TBinaryProtocol.TBinaryProtocol(trans=transport, strictRead=False, strictWrite=False)
             client = scribe.Client(iprot=protocol, oprot=protocol)
             transport.open()
