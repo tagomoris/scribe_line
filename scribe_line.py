@@ -26,8 +26,8 @@ sys.path = [os.path.dirname(__file__)] + sys.path
 DEFAULT_RETRY_WAIT = 3
 
 from scribe import scribe
-from thrift import transport # TTransport, TSocket
-from thrift import protocol # TBinaryProtocol
+from thrift.transport import TTransport, TSocket
+from thrift.protocol import TBinaryProtocol
 from thrift.transport.TTransport import TTransportException
 
 if len(sys.argv) != 4:
@@ -41,8 +41,8 @@ inbuffer_logs = []
 
 while True:
     try:
-        transport = transport.TTransport.TFramedTransport(transport.TSocket.TSocket(host=host, port=port))
-        protocol = protocol.TBinaryProtocol.TBinaryProtocol(trans=transport, strictRead=False, strictWrite=False)
+        transport = TTransport.TFramedTransport(TSocket.TSocket(host=host, port=port))
+        protocol = TBinaryProtocol.TBinaryProtocol(trans=transport, strictRead=False, strictWrite=False)
         client = scribe.Client(iprot=protocol, oprot=protocol)
         transport.open()
     except TTransportException as ttex:
