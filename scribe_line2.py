@@ -46,14 +46,13 @@ category = sys.argv[-1]
 inbuffer_logs = []
 
 while True:
+    lines = []
     try:
         lines = stdin_obj.readlines(2048)
     except IOError:
         if len(lines) == 0 or (len(lines) == 1 and lines[0] == ''):
             time.sleep(1)
             continue
-
-    print ''.join(lines)
     try:
         sock = TSocket.TSocket(host=host, port=int(port))
         transport = TTransport.TFramedTransport(sock)
