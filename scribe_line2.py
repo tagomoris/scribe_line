@@ -52,6 +52,7 @@ while True:
         time.sleep(1)
         continue
 
+    print ''.join(lines)
     try:
         sock = TSocket.TSocket(host=host, port=int(port))
         transport = TTransport.TFramedTransport(sock)
@@ -60,6 +61,7 @@ while True:
         transport.open()
 
         log_entries = [scribe.LogEntry(category=category, message=line) for line in lines]
+        print log_entries
         while True:
             result = client.Log(messages=log_entries)
             if result == scribe.ResultCode.OK:
