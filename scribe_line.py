@@ -47,19 +47,19 @@ while True:
         transport.open()
     except TTransportException as ttex:
         if ttex.type == TTransportException.UNKNOWN:
-            print "UNKNOWN error... retry after sleep"
+            print "connecting, UNKNOWN error... retry after sleep"
             time.sleep(DEFAULT_RETRY_WAIT)
         elif ttex.type == TTransportException.NOT_OPEN:
-            print "NOT_OPEN error... retry after sleep"
+            print "connecting, NOT_OPEN error... retry after sleep"
             time.sleep(DEFAULT_RETRY_WAIT)
         elif ttex.type == TTransportException.ALREADY_OPEN:
-            print "ALREADY_OPEN error... retry after sleep"
+            print "connecting, ALREADY_OPEN error... retry after sleep"
             time.sleep(DEFAULT_RETRY_WAIT)
         elif ttex.type == TTransportException.TIMED_OUT:
-            print "TIMED_OUT error... retry after sleep"
+            print "connecting, TIMED_OUT error... retry after sleep"
             time.sleep(DEFAULT_RETRY_WAIT)
         elif ttex.type == TTransportException.END_OF_FILE:
-            print "EOF error... retry after sleep"
+            print "connecting, EOF error... retry after sleep"
             time.sleep(DEFAULT_RETRY_WAIT)
         else:
             raise
@@ -92,19 +92,19 @@ while True:
                     raise TTransportException, TTransportException.UNKNOWN, "Unknown result code: %d." % result
     except TTransportException as ttex:
         if ttex.type == TTransportException.UNKNOWN:
-            print "UNKNOWN error... retry after sleep"
+            print "transferring, UNKNOWN error... retry after sleep"
             time.sleep(DEFAULT_RETRY_WAIT)
         elif ttex.type == TTransportException.NOT_OPEN:
-            print "NOT_OPEN error... retry after sleep"
+            print "transferring, NOT_OPEN error... retry after sleep"
             time.sleep(DEFAULT_RETRY_WAIT)
         elif ttex.type == TTransportException.ALREADY_OPEN:
-            print "ALREADY_OPEN error... retry after sleep"
+            print "transferring, ALREADY_OPEN error... retry after sleep"
             time.sleep(DEFAULT_RETRY_WAIT)
         elif ttex.type == TTransportException.TIMED_OUT:
-            print "TIMED_OUT error... retry after sleep"
+            print "transferring, TIMED_OUT error... retry after sleep"
             time.sleep(DEFAULT_RETRY_WAIT)
         elif ttex.type == TTransportException.END_OF_FILE:
-            print "EOF error... retry after sleep"
+            print "transferring, EOF error... retry after sleep"
             time.sleep(DEFAULT_RETRY_WAIT)
         else:
             raise
