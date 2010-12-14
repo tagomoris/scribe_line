@@ -41,7 +41,7 @@ inbuffer_logs = []
 
 while True:
     try:
-        transport = transport.TTransport.TFramedTransport(thrift.TSocket.TSocket(host=host, port=port))
+        transport = transport.TTransport.TFramedTransport(transport.TSocket.TSocket(host=host, port=port))
         protocol = protocol.TBinaryProtocol.TBinaryProtocol(trans=transport, strictRead=False, strictWrite=False)
         client = scribe.Client(iprot=protocol, oprot=protocol)
         transport.open()
