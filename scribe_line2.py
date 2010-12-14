@@ -17,13 +17,14 @@
 
 '''scribe_line.py: log transfer script with scribe
 
-[USAGE] tail -f /var/log/any.log | scribe_line.py HOSTNAME PORT CATEGORY_NAME
-            -x: discard logs from buffer when connection to scribe server lost'''
+[USAGE] tail -f /var/log/any.log | scribe_line.py HOSTNAME PORT CATEGORY_NAME'''
 
 import sys, os, time, fcntl
 sys.path = [os.path.dirname(__file__)] + sys.path
 
-DEFAULT_RETRY_WAIT = 3
+DEFAULT_RETRY_LOG_WATCH = 0.5
+DEFAULT_RETRY_CONNECT = 3
+DEFAULT_SIZE_LOGS_BUFFERED = 100
 
 from scribe import scribe
 from thrift.transport import TTransport, TSocket
@@ -43,16 +44,16 @@ host = sys.argv[-3]
 port = sys.argv[-2]
 category = sys.argv[-1]
 
-inbuffer_logs = []
-
+lines = []
 while True:
-    lines = []
-    try:
-        lines = stdin_obj.readlines(2048)
-    except IOError:
-        if len(lines) == 0 or (len(lines) == 1 and lines[0] == ''):
-            time.sleep(1)
-            continue
+    if len(lines) < 1:
+        try:
+            while len(lines) < DEFAULT_SIZE_LOGS_BUFFERED:
+                lines = lines + stdin_obj.readlines()
+        except IOError:
+            if len(lines) == 0 or (len(lines) == 1 and lines[0] == ''):
+                time.sleep(0.5)
+                continue
     try:
         sock = TSocket.TSocket(host=host, port=int(port))
         transport = TTransport.TFramedTransport(sock)
@@ -61,7 +62,7 @@ while True:
         transport.open()
 
         log_entries = [scribe.LogEntry(category=category, message=line) for line in lines]
-        print log_entries
+
         while True:
             result = client.Log(messages=log_entries)
             if result == scribe.ResultCode.OK:
@@ -72,6 +73,7 @@ while True:
                 inbuffer_logs.insert(0, line)
                 raise TTransportException, TTransportException.UNKNOWN, "Unknown result code: %d." % result
         transport.close()
+        lines = []
     except TTransportException, ttex:
         if ttex.type == TTransportException.UNKNOWN:
             print "transferring, UNKNOWN error... retry after sleep"
