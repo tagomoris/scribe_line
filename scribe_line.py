@@ -90,8 +90,6 @@ while True:
                 else:
                     inbuffer_logs.insert(0, line)
                     raise TTransportException, TTransportException.UNKNOWN, "Unknown result code: %d." % result
-
-        transport.close()
     except TTransportException as ttex:
         if ttex.type == TTransportException.UNKNOWN:
             print "UNKNOWN error... retry after sleep"
@@ -110,5 +108,5 @@ while True:
             time.sleep(DEFAULT_RETRY_WAIT)
         else:
             raise
-        
-    
+
+    transport.close()
