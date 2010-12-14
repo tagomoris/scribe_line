@@ -20,7 +20,7 @@
 [USAGE] tail -f /var/log/any.log | scribe_line.py HOSTNAME PORT CATEGORY_NAME
             -x: discard logs from buffer when connection to scribe server lost'''
 
-import sys, os, time
+import sys, os, time, fcntl
 sys.path = [os.path.dirname(__file__)] + sys.path
 
 DEFAULT_RETRY_WAIT = 3
@@ -29,6 +29,12 @@ from scribe import scribe
 from thrift.transport import TTransport, TSocket
 from thrift.protocol import TBinaryProtocol
 from thrift.transport.TTransport import TTransportException
+
+# disable buffering and re-open in NONBLOCK MODE
+sys.stdin.close()
+stdin_obj = os.fdopen(0, 'r', 0)
+fcntl.fcntl(stdin_obj, fcntl.F_SETFL, os.O_NONBLOCK)
+
 
 if len(sys.argv) != 4:
     sys.exit("Invalid arguments.\n" + __doc__)
@@ -40,7 +46,11 @@ category = sys.argv[-1]
 inbuffer_logs = []
 
 while True:
-    lines = sys.stdin.readlines(500)
+    try:
+        lines = stdin_obj.readlines(2048)
+    except IOError:
+        time.sleep(1)
+        continue
 
     try:
         sock = TSocket.TSocket(host=host, port=int(port))
@@ -48,6 +58,7 @@ while True:
         protocol = TBinaryProtocol.TBinaryProtocol(trans=transport, strictRead=False, strictWrite=False)
         client = scribe.Client(iprot=protocol, oprot=protocol)
         transport.open()
+
         log_entries = [scribe.LogEntry(category=category, message=line) for line in lines]
         while True:
             result = client.Log(messages=log_entries)
@@ -77,5 +88,3 @@ while True:
             time.sleep(DEFAULT_RETRY_WAIT)
         else:
             raise
-    if len(''.join(lines)) < 500 or sys.stdin.closed:
-        break
