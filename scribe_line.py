@@ -30,7 +30,7 @@ from thrift import transport # TTransport, TSocket
 from thrift import protocol # TBinaryProtocol
 from thrift.transport.TTransport import TTransportException
 
-if len(sys.argv) != 4
+if len(sys.argv) != 4:
     sys.exit("Invalid arguments.\n" + __doc__)
 
 host = sys.argv[-3]
