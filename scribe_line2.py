@@ -48,9 +48,9 @@ while True:
         protocol = TBinaryProtocol.TBinaryProtocol(trans=transport, strictRead=False, strictWrite=False)
         client = scribe.Client(iprot=protocol, oprot=protocol)
         transport.open()
-        log_entry = scribe.LogEntry(category=category, message=line)
+        log_entries = [scribe.LogEntry(category=category, message=line) for line in lines]
         while True:
-            result = client.Log(messages=lines)
+            result = client.Log(messages=log_entries)
             if result == scribe.ResultCode.OK:
                 break
             elif result == scribe.ResultCode.TRY_LATER:
