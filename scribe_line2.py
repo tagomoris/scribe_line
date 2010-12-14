@@ -49,9 +49,10 @@ while True:
     if len(lines) < 1:
         try:
             while len(lines) < DEFAULT_SIZE_LOGS_BUFFERED:
-                lines = lines + stdin_obj.readlines()
+                lines.append(stdin_obj.readline())
         except IOError:
             if len(lines) == 0 or (len(lines) == 1 and lines[0] == ''):
+                lines = []
                 time.sleep(0.5)
                 continue
     try:
