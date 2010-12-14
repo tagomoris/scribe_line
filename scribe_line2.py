@@ -49,8 +49,9 @@ while True:
     try:
         lines = stdin_obj.readlines(2048)
     except IOError:
-        time.sleep(1)
-        continue
+        if len(lines) == 0 or (len(lines) == 1 and lines[0] == ''):
+            time.sleep(1)
+            continue
 
     print ''.join(lines)
     try:
