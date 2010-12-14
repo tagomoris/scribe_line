@@ -30,12 +30,12 @@ from thrift.transport import TTransport, TSocket
 from thrift.protocol import TBinaryProtocol
 from thrift.transport.TTransport import TTransportException
 
-#if len(sys.argv) != 4:
-#    sys.exit("Invalid arguments.\n" + __doc__)
+if len(sys.argv) != 4:
+    sys.exit("Invalid arguments.\n" + __doc__)
 
-#host = sys.argv[-3]
-#port = sys.argv[-2]
-#category = sys.argv[-1]
+host = sys.argv[-3]
+port = sys.argv[-2]
+category = sys.argv[-1]
 
 inbuffer_logs = []
 
