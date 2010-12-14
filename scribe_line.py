@@ -17,18 +17,25 @@
 
 '''scribe_line.py: log transfer script with scribe
 
-[USAGE] tail -f /var/log/any.log | scribe_line.py HOSTNAME PORT CATEGORY_NAME
-            -x: discard logs from buffer when connection to scribe server lost'''
+[USAGE] tail -f /var/log/any.log | scribe_line.py HOSTNAME PORT CATEGORY_NAME'''
 
-import sys, os, time
+import sys, os, time, fcntl
 sys.path = [os.path.dirname(__file__)] + sys.path
 
-DEFAULT_RETRY_WAIT = 3
+DEFAULT_RETRY_LOG_WATCH = 0.5
+DEFAULT_RETRY_CONNECT = 3
+DEFAULT_SIZE_LOGS_BUFFERED = 100
 
 from scribe import scribe
 from thrift.transport import TTransport, TSocket
 from thrift.protocol import TBinaryProtocol
 from thrift.transport.TTransport import TTransportException
+
+# disable buffering and re-open in NONBLOCK MODE
+sys.stdin.close()
+stdin_obj = os.fdopen(0, 'r', 0)
+fcntl.fcntl(stdin_obj, fcntl.F_SETFL, os.O_NONBLOCK)
+
 
 if len(sys.argv) != 4:
     sys.exit("Invalid arguments.\n" + __doc__)
@@ -37,62 +44,38 @@ host = sys.argv[-3]
 port = sys.argv[-2]
 category = sys.argv[-1]
 
-inbuffer_logs = []
-
+lines = []
 while True:
-    if sys.stdin.closed:
-        break
+    if len(lines) < 1:
+        try:
+            while len(lines) < DEFAULT_SIZE_LOGS_BUFFERED:
+                lines.append(stdin_obj.readline())
+        except IOError:
+            if len(lines) == 0 or (len(lines) == 1 and lines[0] == ''):
+                lines = []
+                time.sleep(0.5)
+                continue
     try:
-        transport = TTransport.TFramedTransport(TSocket.TSocket(host=host, port=int(port)))
+        sock = TSocket.TSocket(host=host, port=int(port))
+        transport = TTransport.TFramedTransport(sock)
         protocol = TBinaryProtocol.TBinaryProtocol(trans=transport, strictRead=False, strictWrite=False)
         client = scribe.Client(iprot=protocol, oprot=protocol)
         transport.open()
-    except TTransportException as ttex:
-        if ttex.type == TTransportException.UNKNOWN:
-            print "connecting, UNKNOWN error... retry after sleep"
-            time.sleep(DEFAULT_RETRY_WAIT)
-        elif ttex.type == TTransportException.NOT_OPEN:
-            print "connecting, NOT_OPEN error... retry after sleep"
-            time.sleep(DEFAULT_RETRY_WAIT)
-        elif ttex.type == TTransportException.ALREADY_OPEN:
-            print "connecting, ALREADY_OPEN error... retry after sleep"
-            time.sleep(DEFAULT_RETRY_WAIT)
-        elif ttex.type == TTransportException.TIMED_OUT:
-            print "connecting, TIMED_OUT error... retry after sleep"
-            time.sleep(DEFAULT_RETRY_WAIT)
-        elif ttex.type == TTransportException.END_OF_FILE:
-            print "connecting, EOF error... retry after sleep"
-            time.sleep(DEFAULT_RETRY_WAIT)
-        else:
-            raise
 
-    try:
-        while len(inbuffer_logs) > 0:
-            line = inbuffer_logs.pop(0)
-            log_entry = scribe.LogEntry(category=category, message=line)
-            while True:
-                result = client.Log(messages=[log_entry])
-                if result == scribe.ResultCode.OK:
-                    break
-                elif result == scribe.ResultCode.TRY_LATER:
-                    time.sleep(DEFAULT_RETRY_WAIT)
-                    pass
-                else:
-                    inbuffer_logs.insert(0, line)
-                    raise TTransportException, TTransportException.UNKNOWN, "Unknown result code: %d." % result
+        log_entries = [scribe.LogEntry(category=category, message=line) for line in lines]
 
-        for line in sys.stdin:
-            log_entry = scribe.LogEntry(category=category, message=line)
-            while True:
-                result = client.Log(messages=[log_entry]) #TODO bulk transfer ?
-                if result == scribe.ResultCode.OK:
-                    break
-                elif result == scribe.ResultCode.TRY_LATER:
-                    time.sleep(DEFAULT_RETRY_WAIT)
-                else:
-                    inbuffer_logs.insert(0, line)
-                    raise TTransportException, TTransportException.UNKNOWN, "Unknown result code: %d." % result
-    except TTransportException as ttex:
+        while True:
+            result = client.Log(messages=log_entries)
+            if result == scribe.ResultCode.OK:
+                break
+            elif result == scribe.ResultCode.TRY_LATER:
+                time.sleep(DEFAULT_RETRY_WAIT)
+            else:
+                inbuffer_logs.insert(0, line)
+                raise TTransportException, TTransportException.UNKNOWN, "Unknown result code: %d." % result
+        transport.close()
+        lines = []
+    except TTransportException, ttex:
         if ttex.type == TTransportException.UNKNOWN:
             print "transferring, UNKNOWN error... retry after sleep"
             time.sleep(DEFAULT_RETRY_WAIT)
@@ -110,5 +93,3 @@ while True:
             time.sleep(DEFAULT_RETRY_WAIT)
         else:
             raise
-
-    transport.close()
