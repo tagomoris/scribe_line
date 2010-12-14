@@ -48,19 +48,19 @@ while True:
     except TTransportException as ttex:
         if ttex.type == TTransportException.UNKNOWN:
             print "UNKNOWN error... retry after sleep"
-            time.slepp(DEFAULT_RETRY_WAIT)
+            time.sleep(DEFAULT_RETRY_WAIT)
         elif ttex.type == TTransportException.NOT_OPEN:
             print "NOT_OPEN error... retry after sleep"
-            time.slepp(DEFAULT_RETRY_WAIT)
+            time.sleep(DEFAULT_RETRY_WAIT)
         elif ttex.type == TTransportException.ALREADY_OPEN:
             print "ALREADY_OPEN error... retry after sleep"
-            time.slepp(DEFAULT_RETRY_WAIT)
+            time.sleep(DEFAULT_RETRY_WAIT)
         elif ttex.type == TTransportException.TIMED_OUT:
             print "TIMED_OUT error... retry after sleep"
-            time.slepp(DEFAULT_RETRY_WAIT)
+            time.sleep(DEFAULT_RETRY_WAIT)
         elif ttex.type == TTransportException.END_OF_FILE:
             print "EOF error... retry after sleep"
-            time.slepp(DEFAULT_RETRY_WAIT)
+            time.sleep(DEFAULT_RETRY_WAIT)
         else:
             raise
 
@@ -95,19 +95,19 @@ while True:
     except TTransportException as ttex:
         if ttex.type == TTransportException.UNKNOWN:
             print "UNKNOWN error... retry after sleep"
-            time.slepp(DEFAULT_RETRY_WAIT)
+            time.sleep(DEFAULT_RETRY_WAIT)
         elif ttex.type == TTransportException.NOT_OPEN:
             print "NOT_OPEN error... retry after sleep"
-            time.slepp(DEFAULT_RETRY_WAIT)
+            time.sleep(DEFAULT_RETRY_WAIT)
         elif ttex.type == TTransportException.ALREADY_OPEN:
             print "ALREADY_OPEN error... retry after sleep"
-            time.slepp(DEFAULT_RETRY_WAIT)
+            time.sleep(DEFAULT_RETRY_WAIT)
         elif ttex.type == TTransportException.TIMED_OUT:
             print "TIMED_OUT error... retry after sleep"
-            time.slepp(DEFAULT_RETRY_WAIT)
+            time.sleep(DEFAULT_RETRY_WAIT)
         elif ttex.type == TTransportException.END_OF_FILE:
             print "EOF error... retry after sleep"
-            time.slepp(DEFAULT_RETRY_WAIT)
+            time.sleep(DEFAULT_RETRY_WAIT)
         else:
             raise
         
