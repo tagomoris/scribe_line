@@ -43,8 +43,8 @@ while True:
     if sys.stdin.closed:
         break
     try:
-        sock = TSocket.TSocket(host=host, port=int(port))
         for line in sys.stdin:
+            sock = TSocket.TSocket(host=host, port=int(port))
             transport = TTransport.TFramedTransport(sock)
             protocol = TBinaryProtocol.TBinaryProtocol(trans=transport, strictRead=False, strictWrite=False)
             client = scribe.Client(iprot=protocol, oprot=protocol)
@@ -60,7 +60,7 @@ while True:
                     inbuffer_logs.insert(0, line)
                     raise TTransportException, TTransportException.UNKNOWN, "Unknown result code: %d." % result
             transport.close()
-    except TTransportException as ttex:
+    except TTransportException, ttex:
         if ttex.type == TTransportException.UNKNOWN:
             print "transferring, UNKNOWN error... retry after sleep"
             time.sleep(DEFAULT_RETRY_WAIT)
