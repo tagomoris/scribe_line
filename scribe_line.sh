@@ -15,22 +15,38 @@
 ##  See the License for the specific language governing permissions and
 ##  limitations under the License.
 
-$SCRIBE_LINE_CMD=`dirname $0`/scribe_line.py
-$SCRIBE_SERVER="10.0.195.90" # scribe-test.admin 
-$SCRIBE_PORT=1464            # 1463 ?
-$DEFAULT_CATEGORY="unknown"
-
-$logs_dir=$1
-$basename=$2
-$category=$3
-if [ x"$category" = "x" ]; then
-    $category=$DEFAULT_CATEGORY
+SCRIBE_LINE_CMD=$(dirname $0)"/scribe_line.py"
+MD5SUM="/usr/bin/md5sum"
+if [ ! -x $MD5SUM ]; then
+    MD5SUM="/sbin/md5"
 fi
 
-function filename_follow_recent {
-    log_directory=$1
-    base_filename=$2
-    find $log_directory -name $base_filename'*' -type f | xargs ls -t | head -1
-}
+DEFAULT_CATEGORY="unknown"
 
-tail -c +0 -F `filename_follow_recent $logs_dir $basename` | $SCRIBE_LINE_CMD $SCRIBE_SERVER $SCRIBE_PORT $category
+
+SCRIBE_SERVER_1="10.0.195.90"
+SCRIBE_PORT_1="1464"
+
+SCRIBE_SERVER_2="10.0.195.90"
+SCRIBE_PORT_2="1463"
+
+logs_dir=$1
+if [ ! -e $logs_dir ]; then
+    exit 1;
+fi
+basename=$2
+if [ x"$basename" = "x" ]; then
+    exit 1;
+fi
+
+
+category=$3
+if [ x"$category" = "x" ]; then
+    category=$DEFAULT_CATEGORY
+fi
+
+target_checksum=`echo -n "$logs_dir/$basename" | $MD5SUM`
+tail_file_path=`find $logs_dir -name $basename'*' -type f | xargs ls -t | head -1`
+
+tail -F $tail_file_path | $SCRIBE_LINE_CMD $category $SCRIBE_SERVER_1 $SCRIBE_PORT_1 $SCRIBE_SERVER_2 $SCRIBE_PORT_2 $target_checksum
+exit $?
