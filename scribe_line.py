@@ -47,10 +47,7 @@ if len(sys.argv) < 4:
     sys.exit("Invalid arguments.\n" + __doc__)
 
 category = sys.argv[1]
-connect_to_list = sys.argv[2:]
-if len(connect_to_list) % 2 == 1:
-    connect_to_list.pop(-1) # parge target hash string
-
+connect_to_list = []
 for i in range(2, len(sys.argv), 2):
     connect_to_list.append([sys.argv[i], sys.argv[i+1]])
 
@@ -90,23 +87,23 @@ def with_exception_trap(func):
 buffered_log_lines = []
 
 @with_exception_trap
-def transport_open(server, port):
+def transport_open(host, port):
     sock = TSocket.TSocket(host=host, port=int(port))
     transport = TTransport.TFramedTransport(sock)
     protocol = TBinaryProtocol.TBinaryProtocol(trans=transport, strictRead=False, strictWrite=False)
     client = scribe.Client(iprot=protocol, oprot=protocol)
     transport.open()
-    return transport
+    return client
 
 
 @with_exception_trap
 def mainloop(host_port_pair_list):
-    transport = None
-    for server, port in host_port_pair_list:
-        transport = transport_open(server, port)
-        if transport:
+    client = None
+    for host, port in host_port_pair_list:
+        client = transport_open(host, port)
+        if client:
             break
-    if not transport:
+    if not client:
         time.sleep(DEFAULT_RETRY_CONNECT)
         return
 
@@ -115,13 +112,10 @@ def mainloop(host_port_pair_list):
             while True:
                 global buffered_log_lines
 
-                if signal_received:
-                    break
-
                 if len(buffered_log_lines) < 1:
                     try:
                         while len(buffered_log_lines) < DEFAULT_SIZE_LOGS_BUFFERED:
-                            lines.append(stdin_obj.readline())
+                            buffered_log_lines.append(stdin_obj.readline())
                     except IOError:
                         if len(buffered_log_lines) == 0 or (len(buffered_log_lines) == 1 and buffered_log_lines[0] == ''):
                             buffered_log_lines = []
@@ -132,17 +126,16 @@ def mainloop(host_port_pair_list):
                 while True:
                     result = client.Log(messages=log_entries)
                     if result == scribe.ResultCode.OK:
-                        lines = []
+                        buffered_log_lines = []
                         break
                     elif result == scribe.ResultCode.TRY_LATER:
                         time.sleep(DEFAULT_RETRY_CONNECT)
                     else:
-                        inbuffer_logs.insert(0, line)
                         raise TTransportException, TTransportException.UNKNOWN, "Unknown result code: %d." % result
         except ReloadSignalException:
             pass # ignore
     finally:
-        transport.close()
+        client.close()
 
 while True:
     mainloop(connect_to_list)

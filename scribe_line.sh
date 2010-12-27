@@ -46,5 +46,5 @@ fi
 target_checksum=`echo -n "$logs_dir/$basename" | $MD5SUM`
 tail_file_path=`find $logs_dir -name $basename'*' -type f | xargs ls -t | head -1`
 
-tail -F $tail_file_path | $SCRIBE_LINE_CMD $category $PRIMARY_SERVER $PRIMARY_PORT $SECONDARY_SERVER $SECONDARY_PORT $target_checksum
+tail -F $tail_file_path | $SCRIBE_LINE_CMD $category $PRIMARY_SERVER $PRIMARY_PORT $SECONDARY_SERVER $SECONDARY_PORT
 exit $?
