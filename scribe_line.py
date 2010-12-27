@@ -23,7 +23,7 @@ import sys
 import os
 import time
 import fcntl
-import functools
+# import functools
 import signal
 
 sys.path = [os.path.dirname(__file__)] + sys.path
@@ -66,8 +66,8 @@ signal.signal(signal.SIGHUP, signal_handler)
 
 
 def with_exception_trap(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
+    # @functools.wraps
+    def wrapping_try_except(*args, **kwargs):
         try:
             return func(*args, **kwargs)
         except TTransportException, ttex:
@@ -84,7 +84,7 @@ def with_exception_trap(func):
             else:
                 raise ttex
             return None
-    return wrapper
+    return wrapping_try_except
 
 
 buffered_log_lines = []
