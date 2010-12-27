@@ -47,7 +47,7 @@ if len(sys.argv) < 4:
     sys.exit("Invalid arguments.\n" + __doc__)
 
 category = sys.argv[1]
-connect_to_list = [2:]
+connect_to_list = sys.argv[2:]
 if len(connect_to_list) % 2 == 1:
     connect_to_list.pop(-1) # parge target hash string
 
@@ -111,35 +111,36 @@ def mainloop(host_port_pair_list):
         return
 
     try:
-        while True:
-            global buffered_log_lines
-
-            if signal_received:
-                break
-
-            if len(buffered_log_lines) < 1:
-                try:
-                    while len(buffered_log_lines) < DEFAULT_SIZE_LOGS_BUFFERED:
-                        lines.append(stdin_obj.readline())
-                except IOError:
-                    if len(buffered_log_lines) == 0 or (len(buffered_log_lines) == 1 and buffered_log_lines[0] == ''):
-                        buffered_log_lines = []
-                        time.sleep(DEFAULT_RETRY_LOG_WATCH)
-                        continue
-            log_entries = [scribe.LogEntry(category=category, message=line) for line in buffered_log_lines]
-
+        try:
             while True:
-                result = client.Log(messages=log_entries)
-                if result == scribe.ResultCode.OK:
-                    lines = []
+                global buffered_log_lines
+
+                if signal_received:
                     break
-                elif result == scribe.ResultCode.TRY_LATER:
-                    time.sleep(DEFAULT_RETRY_CONNECT)
-                else:
-                    inbuffer_logs.insert(0, line)
-                    raise TTransportException, TTransportException.UNKNOWN, "Unknown result code: %d." % result
-    except ReloadSignalException:
-        pass # ignore
+
+                if len(buffered_log_lines) < 1:
+                    try:
+                        while len(buffered_log_lines) < DEFAULT_SIZE_LOGS_BUFFERED:
+                            lines.append(stdin_obj.readline())
+                    except IOError:
+                        if len(buffered_log_lines) == 0 or (len(buffered_log_lines) == 1 and buffered_log_lines[0] == ''):
+                            buffered_log_lines = []
+                            time.sleep(DEFAULT_RETRY_LOG_WATCH)
+                            continue
+                log_entries = [scribe.LogEntry(category=category, message=line) for line in buffered_log_lines]
+
+                while True:
+                    result = client.Log(messages=log_entries)
+                    if result == scribe.ResultCode.OK:
+                        lines = []
+                        break
+                    elif result == scribe.ResultCode.TRY_LATER:
+                        time.sleep(DEFAULT_RETRY_CONNECT)
+                    else:
+                        inbuffer_logs.insert(0, line)
+                        raise TTransportException, TTransportException.UNKNOWN, "Unknown result code: %d." % result
+        except ReloadSignalException:
+            pass # ignore
     finally:
         transport.close()
 
