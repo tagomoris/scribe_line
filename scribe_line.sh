@@ -23,12 +23,11 @@ fi
 
 DEFAULT_CATEGORY="unknown"
 
+PRIMARY_SERVER="10.0.195.90"
+PRIMARY_PORT="1463"
 
-SCRIBE_SERVER_1="10.0.195.90"
-SCRIBE_PORT_1="1464"
-
-SCRIBE_SERVER_2="10.0.195.90"
-SCRIBE_PORT_2="1463"
+SECONDARY_SERVER="10.0.195.90"
+SECONDARY_PORT="1464"
 
 logs_dir=$1
 if [ ! -e $logs_dir ]; then
@@ -39,7 +38,6 @@ if [ x"$basename" = "x" ]; then
     exit 1;
 fi
 
-
 category=$3
 if [ x"$category" = "x" ]; then
     category=$DEFAULT_CATEGORY
@@ -48,5 +46,5 @@ fi
 target_checksum=`echo -n "$logs_dir/$basename" | $MD5SUM`
 tail_file_path=`find $logs_dir -name $basename'*' -type f | xargs ls -t | head -1`
 
-tail -F $tail_file_path | $SCRIBE_LINE_CMD $category $SCRIBE_SERVER_1 $SCRIBE_PORT_1 $SCRIBE_SERVER_2 $SCRIBE_PORT_2 $target_checksum
+tail -F $tail_file_path | $SCRIBE_LINE_CMD $category $PRIMARY_SERVER $PRIMARY_PORT $SECONDARY_SERVER $SECONDARY_PORT $target_checksum
 exit $?
