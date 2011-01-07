@@ -32,6 +32,9 @@ DEFAULT_RETRY_LOG_WATCH = 0.5
 DEFAULT_RETRY_CONNECT = 3
 DEFAULT_SIZE_LOGS_BUFFERED = 100
 
+DEFAULT_RECONNECT_SECONDS = 1800 # 30min.
+
+
 from scribe import scribe
 from thrift.transport import TTransport, TSocket
 from thrift.protocol import TBinaryProtocol
@@ -108,6 +111,7 @@ def mainloop(host_port_pair_list):
     if not client:
         return
 
+    reconnect_time = time.time() + DEFAULT_RECONNECT_SECONDS
     try:
         try:
             while True:
@@ -122,9 +126,6 @@ def mainloop(host_port_pair_list):
                             buffered_log_lines = []
                             time.sleep(DEFAULT_RETRY_LOG_WATCH)
                             continue
-                else:
-                    print "buffered_log_lines not empty, recovered!"
-                    for line in buffered_log_lines: print line
                 log_entries = [scribe.LogEntry(category=category, message=line) for line in buffered_log_lines]
 
                 while True:
@@ -136,6 +137,8 @@ def mainloop(host_port_pair_list):
                         time.sleep(DEFAULT_RETRY_CONNECT)
                     else:
                         raise TTransportException, TTransportException.UNKNOWN, "Unknown result code: %d." % result
+                if time.time() > reconnect_time:
+                    break
         except ReloadSignalException:
             pass # ignore
     finally:
@@ -143,6 +146,4 @@ def mainloop(host_port_pair_list):
 
 while True:
     mainloop(connect_to_list)
-    global buffered_log_lines
-    print "buffered_log_lines: %d" % len(buffered_log_lines)
     time.sleep(DEFAULT_RETRY_CONNECT)
