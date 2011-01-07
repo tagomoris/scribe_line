@@ -124,6 +124,7 @@ def mainloop(host_port_pair_list):
                             continue
                 else:
                     print "buffered_log_lines not empty, recovered!"
+                    for line in buffered_log_lines: print line
                 log_entries = [scribe.LogEntry(category=category, message=line) for line in buffered_log_lines]
 
                 while True:
