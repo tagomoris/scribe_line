@@ -59,7 +59,7 @@ class ReloadSignalException(Exception):
     pass
 
 def signal_handler(signum, frame):
-    print >> sys.stderr, "received signal %d. re-connect to server..." % signum
+    # print >> sys.stderr, "received signal %d. re-connect to server..." % signum
     raise ReloadSignalException, "received signal %d. re-connect to server..."
     
 signal.signal(signal.SIGHUP, signal_handler)
@@ -72,15 +72,20 @@ def with_exception_trap(func):
             return func(*args, **kwargs)
         except TTransportException, ttex:
             if ttex.type == TTransportException.UNKNOWN:
-                print "transferring, UNKNOWN error... retry after sleep" #TODO delete this line....
+                # print "transferring, UNKNOWN error... retry after sleep" #TODO delete this line....
+                pass
             elif ttex.type == TTransportException.NOT_OPEN:
-                print "transferring, NOT_OPEN error... retry after sleep" #TODO delete this line....
+                # print "transferring, NOT_OPEN error... retry after sleep" #TODO delete this line....
+                pass
             elif ttex.type == TTransportException.ALREADY_OPEN:
-                print "transferring, ALREADY_OPEN error... retry after sleep" #TODO delete this line....
+                # print "transferring, ALREADY_OPEN error... retry after sleep" #TODO delete this line....
+                pass
             elif ttex.type == TTransportException.TIMED_OUT:
-                print "transferring, TIMED_OUT error... retry after sleep" #TODO delete this line....
+                # print "transferring, TIMED_OUT error... retry after sleep" #TODO delete this line....
+                pass
             elif ttex.type == TTransportException.END_OF_FILE:
-                print "transferring, EOF error... retry after sleep" #TODO delete this line....
+                # print "transferring, EOF error... retry after sleep" #TODO delete this line....
+                pass
             else:
                 raise ttex
             return None
@@ -115,8 +120,10 @@ def mainloop(host_port_pair_list):
     try:
         try:
             while True:
-                global buffered_log_lines
+                if time.time() > reconnect_time:
+                    break
 
+                global buffered_log_lines
                 if len(buffered_log_lines) < 1:
                     try:
                         while len(buffered_log_lines) < DEFAULT_SIZE_LOGS_BUFFERED:
@@ -137,8 +144,6 @@ def mainloop(host_port_pair_list):
                         time.sleep(DEFAULT_RETRY_CONNECT)
                     else:
                         raise TTransportException, TTransportException.UNKNOWN, "Unknown result code: %d." % result
-                if time.time() > reconnect_time:
-                    break
         except ReloadSignalException:
             pass # ignore
     finally:
