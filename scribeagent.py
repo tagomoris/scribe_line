@@ -31,8 +31,10 @@ APACHE_PATH_CANDIDATES = [
     '/etc/apache', '/etc/apache2', '/etc/httpd',
     '/usr/local/apache', '/usr/local/apache2', '/usr/local/apache22', '/usr/local/httpd'
     ]
-APACHE_CONFIG_FILES = ['httpd.conf', 'apache.conf', 'apache2.conf']
-
+APACHE_CONFIG_FILES = [
+    'httpd.conf', 'apache.conf', 'apache2.conf',
+    'conf/httpd.conf', 'conf/apache.conf', 'conf/apache2.conf'
+    ]
 APACHECTL_PATH = ['bin/apachectl', '/usr/sbin/apachectl', '/usr/local/sbin/apachectl']
 # for apachectl -S (only for v2/v2.2)
 APACHECTL_VIRTUALHOST_CONFIG_PATTERN = re.compile('.*\((/.*:\d+)\)$')
@@ -40,6 +42,30 @@ APACHECTL_VIRTUALHOST_CONFIG_PATTERN = re.compile('.*\((/.*:\d+)\)$')
 APACHE_DOCUMENTROOT_PATTERN = re.compile('^ServerRoot +\"?(.*)\"?$')
 APACHE_CUSTOMLOG_PATTERN = re.compile('^\s*CustomLog +\"?([^"]*)\"?( +.*)$')
 APACHE_ERRORLOG_PATTERN = re.compile('^\s*ErrorLog +\"([^"])*\"$')
+
+# 1. Apacheが動いてるかを ps auxww から適当にgrepして確認
+#   modperlを抜くのを忘れないこと
+# 2. APACHE_PATH_CANDIDATES x APACHE_CONFIG_FILES をぜんぶ探しまわる
+#  2a. 見付けたら全行を読んで ServerRoot と CustomLog と ErrorLog を探す
+#  2b. かつ Include があって未知であれば読むリストに追加する
+# 3. APACHE_PATH_CANDIDATES x APACHETHCTL_PATH を探しまわる
+#  3a. 見付けて実行可能だったら -S を実行して、見付かったVH設定が既知かどうか調べる
+#  3b. 未知だったら読んで CustomLog と ErrorLog を探す
+
+def check_apache_works():
+    apache_pattern = re.compile('httpd|apache')
+    reject_pattern = re.compile('mod_?perl|grep|hadoop')
+    fileio = os.popen(['ps', 'auxww'])
+    for line in fileio:
+        cmd = ' '.join(line.split()[11:]) # get command list only
+        if apache_pattern.search(cmd) and not reject_pattern.search(cmd):
+            cmd_elements = filter(lambda x: '/' in x, cmd.split()) # this is for path includes space
+            if len(cmd_elements) < 1:
+                cmd_elements = [cmd.split()[0]]
+            executed_file_name = ' '.join(cmd_elements).split('/')[-1]
+            if executed_file_name in ['httpd', 'apache', 'apache2', 'apache22']:
+                return True
+
 
 def find_root_config():
     # check ServerRoot
