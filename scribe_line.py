@@ -17,7 +17,7 @@
 
 '''scribe_line.py: log transfer script with scribe
 
-[USAGE] tail -f /var/log/any.log | scribe_line.py HOSTNAME PORT CATEGORY_NAME'''
+[USAGE] tail -f /var/log/any.log | scribe_line.py CATEGORY_NAME HOSTNAME PORT [HOSTNAME2 PORT2 [...]]'''
 
 import sys
 import os
@@ -93,15 +93,16 @@ def transport_open(host, port):
     protocol = TBinaryProtocol.TBinaryProtocol(trans=transport, strictRead=False, strictWrite=False)
     client = scribe.Client(iprot=protocol, oprot=protocol)
     transport.open()
-    return client
+    return (client, transport)
 
 
 @with_exception_trap
 def mainloop(host_port_pair_list):
+    transport = None
     client = None
     for host, port in host_port_pair_list:
-        client = transport_open(host, port)
-        if client:
+        client, transport = transport_open(host, port)
+        if client and transport:
             break
     if not client:
         time.sleep(DEFAULT_RETRY_CONNECT)
@@ -135,7 +136,7 @@ def mainloop(host_port_pair_list):
         except ReloadSignalException:
             pass # ignore
     finally:
-        client.close()
+        transport.close()
 
 while True:
     mainloop(connect_to_list)
