@@ -140,5 +140,6 @@ def mainloop(host_port_pair_list):
 
 while True:
     mainloop(connect_to_list)
+    global buffered_log_lines
     print "buffered_log_lines: %d" % len(buffered_log_lines)
     time.sleep(DEFAULT_RETRY_CONNECT)
