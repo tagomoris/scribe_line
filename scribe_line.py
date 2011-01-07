@@ -119,7 +119,7 @@ def mainloop(host_port_pair_list):
                             buffered_log_lines.append(stdin_obj.readline())
                     except IOError:
                         if len(buffered_log_lines) == 0 or (len(buffered_log_lines) == 1 and buffered_log_lines[0] == ''):
-                            del buffered_log_lines
+                            buffered_log_lines = []
                             time.sleep(DEFAULT_RETRY_LOG_WATCH)
                             continue
                 log_entries = [scribe.LogEntry(category=category, message=line) for line in buffered_log_lines]
@@ -127,7 +127,7 @@ def mainloop(host_port_pair_list):
                 while True:
                     result = client.Log(messages=log_entries)
                     if result == scribe.ResultCode.OK:
-                        del buffered_log_lines
+                        buffered_log_lines = []
                         break
                     elif result == scribe.ResultCode.TRY_LATER:
                         time.sleep(DEFAULT_RETRY_CONNECT)
