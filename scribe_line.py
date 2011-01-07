@@ -101,8 +101,9 @@ def mainloop(host_port_pair_list):
     transport = None
     client = None
     for host, port in host_port_pair_list:
-        client, transport = transport_open(host, port)
-        if client and transport:
+        result = transport_open(host, port)
+        if result:
+            client, transport = result
             break
     if not client:
         time.sleep(DEFAULT_RETRY_CONNECT)
