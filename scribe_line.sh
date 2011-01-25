@@ -23,10 +23,10 @@ fi
 
 DEFAULT_CATEGORY="unknown"
 
-PRIMARY_SERVER="10.0.195.90"
+PRIMARY_SERVER="deliver.dh.scribe.admin"
 PRIMARY_PORT="1463"
 
-SECONDARY_SERVER="10.0.195.90"
+SECONDARY_SERVER="central.dh.scribe.admin"
 SECONDARY_PORT="1464"
 
 logs_dir=$1
