@@ -27,7 +27,7 @@ PRIMARY_SERVER="deliver.dh.scribe.admin"
 PRIMARY_PORT="1463"
 
 SECONDARY_SERVER="central.dh.scribe.admin"
-SECONDARY_PORT="1464"
+SECONDARY_PORT="1463"
 
 logs_dir=$1
 if [ ! -e $logs_dir ]; then
