@@ -25,6 +25,9 @@ import time
 import fcntl
 # import functools
 import signal
+import random
+
+random.seed()
 
 sys.path = [os.path.dirname(__file__)] + sys.path
 
@@ -59,7 +62,6 @@ class ReloadSignalException(Exception):
     pass
 
 def signal_handler(signum, frame):
-    # print >> sys.stderr, "received signal %d. re-connect to server..." % signum
     raise ReloadSignalException, "received signal %d. re-connect to server..."
     
 signal.signal(signal.SIGHUP, signal_handler)
@@ -72,19 +74,14 @@ def with_exception_trap(func):
             return func(*args, **kwargs)
         except TTransportException, ttex:
             if ttex.type == TTransportException.UNKNOWN:
-                # print "transferring, UNKNOWN error... retry after sleep" #TODO delete this line....
                 pass
             elif ttex.type == TTransportException.NOT_OPEN:
-                # print "transferring, NOT_OPEN error... retry after sleep" #TODO delete this line....
                 pass
             elif ttex.type == TTransportException.ALREADY_OPEN:
-                # print "transferring, ALREADY_OPEN error... retry after sleep" #TODO delete this line....
                 pass
             elif ttex.type == TTransportException.TIMED_OUT:
-                # print "transferring, TIMED_OUT error... retry after sleep" #TODO delete this line....
                 pass
             elif ttex.type == TTransportException.END_OF_FILE:
-                # print "transferring, EOF error... retry after sleep" #TODO delete this line....
                 pass
             else:
                 raise ttex
@@ -108,15 +105,17 @@ buffered_log_lines = []
 def mainloop(host_port_pair_list):
     transport = None
     client = None
+    amp = 0
     for host, port in host_port_pair_list:
         result = transport_open(host, port)
         if result:
             client, transport = result
             break
+        amp = amp + 1
     if not client:
         return
 
-    reconnect_time = time.time() + DEFAULT_RECONNECT_SECONDS
+    reconnect_time = time.time() + DEFAULT_RECONNECT_SECONDS + (amp * random.randint(-5,5))
     try:
         try:
             while True:
