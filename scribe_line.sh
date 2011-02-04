@@ -43,6 +43,11 @@ if [ x"$category" = "x" ]; then
     category=$DEFAULT_CATEGORY
 fi
 
+opt=$4
+if [ x"$opt" = "x-o" ]; then
+    SCRIBE_LINE_CMD=$(dirname $0)"/scribe_line23.py"
+fi
+
 target_checksum=`echo -n "$logs_dir/$basename" | $MD5SUM`
 tail_file_path=`find $logs_dir -name $basename'*' -type f | xargs ls -t | head -1`
 
