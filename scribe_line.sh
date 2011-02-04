@@ -15,6 +15,7 @@
 ##  See the License for the specific language governing permissions and
 ##  limitations under the License.
 
+PYTHON="python"
 SCRIBE_LINE_CMD=$(dirname $0)"/scribe_line.py"
 MD5SUM="/usr/bin/md5sum"
 if [ ! -x $MD5SUM ]; then
@@ -44,8 +45,8 @@ if [ x"$category" = "x" ]; then
 fi
 
 opt=$4
-if [ x"$opt" = "x-o" ]; then
-    SCRIBE_LINE_CMD=$(dirname $0)"/scribe_line23.py"
+if [ x"$opt" = "x-py24" ]; then
+    PYTHON="/usr/local/bin/python2.4"
 fi
 
 target_checksum=`echo -n "$logs_dir/$basename" | $MD5SUM`
