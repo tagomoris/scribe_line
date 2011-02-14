@@ -35,7 +35,8 @@ DEFAULT_RETRY_LOG_WATCH = 0.5
 DEFAULT_RETRY_CONNECT = 3
 DEFAULT_SIZE_LOGS_BUFFERED = 100
 
-DEFAULT_RECONNECT_SECONDS = 1800 # 30min.
+# DEFAULT_RECONNECT_SECONDS = 1800 # 30min.
+DEFAULT_RECONNECT_SECONDS = 10 # now testing....
 
 
 from scribe import scribe
@@ -119,10 +120,12 @@ def mainloop(host_port_pair_list):
     try:
         try:
             while True:
+                global buffered_log_lines
+
                 if time.time() > reconnect_time:
+                    buffered_log_lines.append("reconnected!!!\n")
                     break
 
-                global buffered_log_lines
                 if len(buffered_log_lines) < 1:
                     try:
                         while len(buffered_log_lines) < DEFAULT_SIZE_LOGS_BUFFERED:
