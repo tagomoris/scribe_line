@@ -34,12 +34,11 @@ random.seed()
 
 sys.path = [os.path.dirname(__file__)] + sys.path
 
-DEFAULT_RETRY_LOG_WATCH = 0.5
+DEFAULT_RETRY_LOG_WATCH = 0.1
 DEFAULT_RETRY_CONNECT = 3
 DEFAULT_SIZE_LOGS_BUFFERED = 100
 
-# DEFAULT_RECONNECT_SECONDS = 1800 # 30min.
-DEFAULT_RECONNECT_SECONDS = 10 # now testing....
+DEFAULT_RECONNECT_SECONDS = 1800 # 30min.
 
 
 from scribe import scribe
@@ -103,6 +102,7 @@ def transport_open(host, port):
     return (client, transport)
 
 
+continuous_line = None
 buffered_log_lines = []
 
 @with_exception_trap
@@ -124,19 +124,24 @@ def mainloop(host_port_pair_list):
         try:
             while True:
                 global buffered_log_lines
-                testing_format = re.compile("\d\d:\d\d:\d\d 1111111111")
-
                 if time.time() > reconnect_time:
-                    buffered_log_lines.append("reconnected!!!\n")
                     break
 
                 if len(buffered_log_lines) < 1:
                     try:
                         while len(buffered_log_lines) < DEFAULT_SIZE_LOGS_BUFFERED:
                             line = stdin_obj.readline()
-                            if not testing_format.match(line):
-                                warnings.warn("NOT complete line: " + line)
-                            buffered_log_lines.append(line)
+                            if line.endswith("\n"):
+                                if continuous_line:
+                                    buffered_log_lines.append(continuous_line + line)
+                                    continuous_line = None
+                                else:
+                                    buffered_log_lines.append(line)
+                            else:
+                                if continuous_line:
+                                    continuous_line += line
+                                else:
+                                    continuous_line = line
                     except IOError:
                         if len(buffered_log_lines) == 0 or (len(buffered_log_lines) == 1 and buffered_log_lines[0] == ''):
                             buffered_log_lines = []
