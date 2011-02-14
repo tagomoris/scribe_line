@@ -27,6 +27,9 @@ import fcntl
 import signal
 import random
 
+import re
+import warnings
+
 random.seed()
 
 sys.path = [os.path.dirname(__file__)] + sys.path
@@ -121,6 +124,7 @@ def mainloop(host_port_pair_list):
         try:
             while True:
                 global buffered_log_lines
+                testing_format = re.compile("\d\d:\d\d:\d\d 1111111111")
 
                 if time.time() > reconnect_time:
                     buffered_log_lines.append("reconnected!!!\n")
@@ -129,7 +133,10 @@ def mainloop(host_port_pair_list):
                 if len(buffered_log_lines) < 1:
                     try:
                         while len(buffered_log_lines) < DEFAULT_SIZE_LOGS_BUFFERED:
-                            buffered_log_lines.append(stdin_obj.readline())
+                            line = stdin_obj.readline()
+                            if not testing_format.match(line):
+                                warnings.warn("NOT complete line: " + line)
+                            buffered_log_lines.append()
                     except IOError:
                         if len(buffered_log_lines) == 0 or (len(buffered_log_lines) == 1 and buffered_log_lines[0] == ''):
                             buffered_log_lines = []
