@@ -144,22 +144,12 @@ def mainloop(host_port_pair_list):
                                     buffered_log_lines.append(line[0:(line.find("\n") + 1)])
                                 line = line[(line.find("\n") + 1):]
                             if len(line) > 0:
-                                continuous_line = line
+                                if continuous_line:
+                                    continuous_line += line
+                                else:
+                                    continuous_line = line
                             line = None
                     except IOError:
-                        if line:
-                            warnings.warn("!!!: " + line)
-                            # while(line.find("\n") > -1):
-                            #    if continuous_line:
-                            #        buffered_log_lines.append(continuous_line + line[0:(line.find("\n") + 1)])
-                            #        continuous_line = None
-                            #    else:
-                            #        buffered_log_lines.append(line[0:(line.find("\n") + 1)])
-                            #    line = line[(line.find("\n") + 1):]
-                            #if len(line) > 0:
-                            #    continuous_line = line
-                            #line = None
-
                         if len(buffered_log_lines) == 0:
                             time.sleep(DEFAULT_RETRY_LOG_WATCH)
                             continue
