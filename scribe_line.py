@@ -122,12 +122,12 @@ def mainloop(host_port_pair_list):
     if not client:
         return
 
+    global continuous_line
+    global buffered_log_lines
     reconnect_time = time.time() + DEFAULT_RECONNECT_SECONDS + (amp * random.randint(-5,5))
     try:
         try:
             while True:
-                global continuous_line
-                global buffered_log_lines
                 if time.time() > reconnect_time:
                     break
 
@@ -148,19 +148,19 @@ def mainloop(host_port_pair_list):
                             line = None
                     except IOError:
                         if line:
-                            while(line.find("\n") > -1):
-                                if continuous_line:
-                                    buffered_log_lines.append(continuous_line + line[0:(line.find("\n") + 1)])
-                                    continuous_line = None
-                                else:
-                                    buffered_log_lines.append(line[0:(line.find("\n") + 1)])
-                                line = line[(line.find("\n") + 1):]
-                            if len(line) > 0:
-                                continuous_line = line
-                            line = None
+                            warnings.warn("!!!: " + line)
+                            # while(line.find("\n") > -1):
+                            #    if continuous_line:
+                            #        buffered_log_lines.append(continuous_line + line[0:(line.find("\n") + 1)])
+                            #        continuous_line = None
+                            #    else:
+                            #        buffered_log_lines.append(line[0:(line.find("\n") + 1)])
+                            #    line = line[(line.find("\n") + 1):]
+                            #if len(line) > 0:
+                            #    continuous_line = line
+                            #line = None
 
-                        if len(buffered_log_lines) == 0 or (len(buffered_log_lines) == 1 and buffered_log_lines[0] == ''):
-                            buffered_log_lines = []
+                        if len(buffered_log_lines) == 0:
                             time.sleep(DEFAULT_RETRY_LOG_WATCH)
                             continue
                 log_entries = [scribe.LogEntry(category=category, message=line) for line in buffered_log_lines]
