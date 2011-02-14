@@ -136,8 +136,6 @@ def mainloop(host_port_pair_list):
                     try:
                         while len(buffered_log_lines) < DEFAULT_SIZE_LOGS_BUFFERED:
                             line = stdin_obj.read(DEFAULT_READ_BUFFER_SIZE)
-                            if line.find("99999#####") > -1:
-                                warnings.warn pprint.pformat(line)
                             while(line.find("\n") > -1):
                                 if continuous_line:
                                     buffered_log_lines.append(continuous_line + line[0:(line.find("\n") + 1)])
@@ -147,25 +145,24 @@ def mainloop(host_port_pair_list):
                                 line = line[(line.find("\n") + 1):]
                             if len(line) > 0:
                                 continuous_line = line
+                            line = None
                     except IOError:
                         if line:
-                            if line.find("99999#####") > -1:
-                                warnings.warn pprint.pformat(line)
-                            if line.endswith("\n"):
+                            while(line.find("\n") > -1):
                                 if continuous_line:
-                                    buffered_log_lines.append(continuous_line + line)
+                                    buffered_log_lines.append(continuous_line + line[0:(line.find("\n") + 1)])
                                     continuous_line = None
                                 else:
-                                    buffered_log_lines.append(line)
-                            else:
-                                if continuous_line:
-                                    continuous_line += line
-                                else:
-                                    continuous_line = line
+                                    buffered_log_lines.append(line[0:(line.find("\n") + 1)])
+                                line = line[(line.find("\n") + 1):]
+                            if len(line) > 0:
+                                continuous_line = line
+                            line = None
+
                         if len(buffered_log_lines) == 0 or (len(buffered_log_lines) == 1 and buffered_log_lines[0] == ''):
                             buffered_log_lines = []
-                        time.sleep(DEFAULT_RETRY_LOG_WATCH)
-                        continue
+                            time.sleep(DEFAULT_RETRY_LOG_WATCH)
+                            continue
                 log_entries = [scribe.LogEntry(category=category, message=line) for line in buffered_log_lines]
 
                 while True:
