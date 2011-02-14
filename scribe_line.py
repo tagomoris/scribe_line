@@ -123,14 +123,36 @@ def mainloop(host_port_pair_list):
     try:
         try:
             while True:
+                global continuous_line
                 global buffered_log_lines
                 if time.time() > reconnect_time:
                     break
 
                 if len(buffered_log_lines) < 1:
+                    line = None
                     try:
                         while len(buffered_log_lines) < DEFAULT_SIZE_LOGS_BUFFERED:
                             line = stdin_obj.readline()
+                            if line.endswith("\n"):
+                                if line.startswith("XXXXXX"):
+                                    warnings.warn("!!!: " + line)
+                                if line.endswith("9999999999##########"):
+                                    warnings.warn("???: " + line)
+                                if line.endswith("9999999999##########\n"):
+                                    warnings.warn("+++: " + line)
+                                if continuous_line:
+                                    buffered_log_lines.append(continuous_line + line)
+                                    continuous_line = None
+                                else:
+                                    buffered_log_lines.append(line)
+                            else:
+                                warnings.warn("unended-line: " + line)
+                                if continuous_line:
+                                    continuous_line += line
+                                else:
+                                    continuous_line = line
+                    except IOError:
+                        if line:
                             if line.endswith("\n"):
                                 if continuous_line:
                                     buffered_log_lines.append(continuous_line + line)
@@ -142,11 +164,10 @@ def mainloop(host_port_pair_list):
                                     continuous_line += line
                                 else:
                                     continuous_line = line
-                    except IOError:
                         if len(buffered_log_lines) == 0 or (len(buffered_log_lines) == 1 and buffered_log_lines[0] == ''):
                             buffered_log_lines = []
-                            time.sleep(DEFAULT_RETRY_LOG_WATCH)
-                            continue
+                        time.sleep(DEFAULT_RETRY_LOG_WATCH)
+                        continue
                 log_entries = [scribe.LogEntry(category=category, message=line) for line in buffered_log_lines]
 
                 while True:
