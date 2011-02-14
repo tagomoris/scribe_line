@@ -136,7 +136,7 @@ def mainloop(host_port_pair_list):
                             line = stdin_obj.readline()
                             if not testing_format.match(line):
                                 warnings.warn("NOT complete line: " + line)
-                            buffered_log_lines.append()
+                            buffered_log_lines.append(line)
                     except IOError:
                         if len(buffered_log_lines) == 0 or (len(buffered_log_lines) == 1 and buffered_log_lines[0] == ''):
                             buffered_log_lines = []
