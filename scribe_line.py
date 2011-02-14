@@ -29,10 +29,13 @@ import random
 
 import re
 import warnings
+import pprint
 
 random.seed()
 
 sys.path = [os.path.dirname(__file__)] + sys.path
+
+DEFAULT_READ_BUFFER_SIZE = 256
 
 DEFAULT_RETRY_LOG_WATCH = 0.1
 DEFAULT_RETRY_CONNECT = 3
@@ -132,27 +135,22 @@ def mainloop(host_port_pair_list):
                     line = None
                     try:
                         while len(buffered_log_lines) < DEFAULT_SIZE_LOGS_BUFFERED:
-                            line = stdin_obj.readline()
-                            if line.endswith("\n"):
-                                if line.startswith("XXXXXX"):
-                                    warnings.warn("!!!: " + line)
-                                if line.endswith("9999999999##########"):
-                                    warnings.warn("???: " + line)
-                                if line.endswith("9999999999##########\n"):
-                                    warnings.warn("+++: " + line)
+                            line = stdin_obj.read(DEFAULT_READ_BUFFER_SIZE)
+                            if line.find("99999#####") > -1:
+                                warnings.warn pprint.pformat(line)
+                            while(line.find("\n") > -1):
                                 if continuous_line:
-                                    buffered_log_lines.append(continuous_line + line)
+                                    buffered_log_lines.append(continuous_line + line[0:(line.find("\n") + 1)])
                                     continuous_line = None
                                 else:
-                                    buffered_log_lines.append(line)
-                            else:
-                                warnings.warn("unended-line: " + line)
-                                if continuous_line:
-                                    continuous_line += line
-                                else:
-                                    continuous_line = line
+                                    buffered_log_lines.append(line[0:(line.find("\n") + 1)])
+                                line = line[(line.find("\n") + 1):]
+                            if len(line) > 0:
+                                continuous_line = line
                     except IOError:
                         if line:
+                            if line.find("99999#####") > -1:
+                                warnings.warn pprint.pformat(line)
                             if line.endswith("\n"):
                                 if continuous_line:
                                     buffered_log_lines.append(continuous_line + line)
