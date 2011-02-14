@@ -27,10 +27,6 @@ import fcntl
 import signal
 import random
 
-import re
-import warnings
-import pprint
-
 random.seed()
 
 sys.path = [os.path.dirname(__file__)] + sys.path
