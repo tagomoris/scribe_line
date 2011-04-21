@@ -15,6 +15,8 @@
 ##  See the License for the specific language governing permissions and
 ##  limitations under the License.
 
+# このスクリプトは捨てられました
+
 '''scribeagent.py: start-stop script for scribe_line.sh.
    find httpd log scripts from config files, and send all of them with scribe_line.sh
 
@@ -25,6 +27,7 @@
 
 import sys
 import os
+import os.path
 import re
 
 APACHE_PATH_CANDIDATES = [
@@ -68,11 +71,15 @@ def check_apache_works():
 
 
 def find_root_config():
-    # check ServerRoot
+    dirs = filter(lambda p: os.path.exists(p) and os.path.isdir(p), APACHE_PATH_CANDIDATES)
+    return filter(lambda: x: os.path.exists(x) and os.path.isfile(x), [p+'/'+c for p in dirs for c in APACHE_CONFIG_FILES])
+
+
+def get_server_root(root_config_file):
+
+    # check ServerRoot from config
     pass
 
-def find_server_root(root_config_file):
-    pass
 
 def find_apachectl():
     pass
