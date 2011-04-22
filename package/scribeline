@@ -1,2 +1,106 @@
 #!/bin/bash
 
+#start)
+#stop)
+#reload) SIGHUP
+#status)
+
+
+if [ ! -r /etc/scribeline.conf ]; then
+    echo "Config file does not exists: /etc/scribeline.conf"
+    exit 1
+fi
+. /etc/scribeline.conf
+
+logfile=/var/log/scribe_line.log
+scribe_line_sh=/usr/local/scribe_line/scribe_line.sh
+scribe_line_py=/usr/local/scribe_line/scribe_line.py
+
+prog=scribeline
+
+RETVAL=0
+
+parselogconfigs() {
+    categories=()
+    logfilepaths=()
+    items=0
+    echo $LOGS | egrep -v '^[[:space:]]*(#|$)' | while read line; do
+        categories[$items]=`echo $line | awk '{print $1};'`
+        logfilepaths[$items]=`echo $line | awk '{print $2};'`
+        items=$((items + 1))
+    done
+    if [ $PYTHONPATH ]; then
+        CMD="$scribe_line_sh -p $PYTHONPATH"
+    else
+        CMD=$scribe_line_sh
+    fi
+    if [ $SECONDARY_SERVER ]; then
+        SERVERS="$PRIMARY_SERVER $SECONDARY_SERVER"
+    else
+        SERVERS=$PRIMARY_SERVER
+    fi
+    if [ ! $NOHUPPATH ]; then
+        $NOHUPPATH="/usr/bin/nohup"
+    fi
+}
+
+start() {
+    # check $RUN, nohup scribe_line.sh >> logfile
+    echo -n $"Starting $prog: "
+    daemon $httpd $OPTIONS
+    RETVAL=$?
+    echo
+    [ $RETVAL = 0 ] && touch ${lockfile}
+    return $RETVAL
+}
+stop() {
+    #
+    echo -n $"Stopping $prog: "
+    killproc $httpd
+    RETVAL=$?
+    echo
+    [ $RETVAL = 0 ] && rm -f ${lockfile} ${pidfile}
+}
+reload() {
+    #
+    echo -n $"Reloading $prog: "
+    if ! $httpd $OPTIONS -t >&/dev/null; then
+        RETVAL=$?
+        echo $"not reloading due to configuration syntax error"
+        failure $"not reloading $httpd due to configuration syntax error"
+    else
+        killproc $httpd -HUP
+        RETVAL=$?
+    fi
+    echo
+}
+
+# See how we were called.
+case "$1" in
+  start)
+        start
+        ;;
+  stop)
+        stop
+        ;;
+  status)
+        status $httpd
+        RETVAL=$?
+        ;;
+  restart)
+        stop
+        start
+        ;;
+  reload)
+        reload
+        ;;
+  graceful|help)
+        $apachectl $@
+        RETVAL=$?
+        ;;
+  *)
+        echo $"Usage: $prog {start|stop|restart|condrestart|reload|status|fullstatus|graceful|help|configtest}"
+        exit 1
+esac
+
+exit $RETVAL
