@@ -1,11 +1,5 @@
 #!/bin/bash
 
-#start)
-#stop)
-#reload) SIGHUP
-#status)
-
-
 if [ ! -r /etc/scribeline.conf ]; then
     echo "Config file does not exists: /etc/scribeline.conf"
     exit 1
@@ -17,6 +11,7 @@ scribe_line_sh=/usr/local/scribe_line/scribe_line.sh
 scribe_line_py=/usr/local/scribe_line/scribe_line.py
 
 prog=scribeline
+lockfile=/var/run/scribe_line.run
 
 RETVAL=0
 
@@ -45,61 +40,87 @@ parselogconfigs() {
 }
 
 start() {
-    # check $RUN, nohup scribe_line.sh >> logfile
     echo -n $"Starting $prog: "
-    daemon $httpd $OPTIONS
-    RETVAL=$?
-    echo
+    if [ x"$RUN" = "xfalse" ]; then
+        echo "configured not to run."
+        RETVAL=0
+        return $RETVAL
+    fi
+    if [ -f $lockfile ]; then
+        echo "already running."
+        RETVAL=1
+        return $RETVAL
+    fi
+    for (( i = 0; i < $items; i++ )); do
+        $NOHUPPATH $CMD ${categories[$i]} ${logfilepaths[$i]} $SERVERS >> $logfile &
+    done
+    sleep 1
+    procs=`ps auxww | grep $scribe_line_py | grep -v grep | wc -l`
+    if [ $procs != $items ]; then
+        echo "not started correctly."
+        RETVAL=1
+    else
+        echo "ok."
+        RETVAL=0
+    fi
     [ $RETVAL = 0 ] && touch ${lockfile}
     return $RETVAL
 }
 stop() {
-    #
     echo -n $"Stopping $prog: "
-    killproc $httpd
-    RETVAL=$?
-    echo
-    [ $RETVAL = 0 ] && rm -f ${lockfile} ${pidfile}
+    ps axuww | grep $scribe_line_py | grep -v grep | awk '{print $2}' | xargs kill -TERM
+    sleep 1
+    RETVAL=`ps auxww | grep $scribe_line_py | grep -v grep | wc -l`
+    if [ $RETVAL = 0 ]; then
+        rm -f ${lockfile}
+        echo "ok."
+    else
+        echo "failed."
+    fi
+    return $RETVAL
 }
 reload() {
-    #
     echo -n $"Reloading $prog: "
-    if ! $httpd $OPTIONS -t >&/dev/null; then
-        RETVAL=$?
-        echo $"not reloading due to configuration syntax error"
-        failure $"not reloading $httpd due to configuration syntax error"
+    ps auxww | grep $scribe_line_py | grep -v grep | awk '{print $2}' | xargs -HUP
+    echo "reset connections."
+    echo "To run with new config file, do 'restart'."
+    RETVAL=0
+    return $RETVAL
+}
+status() {
+    echo -n "Configured logs for $prog: $items, "
+    procs=`ps auxww | grep $scribe_line_py | grep -v grep | wc -l`
+    if [ $procs != $items ]; then
+        echo "not running correctly."
+        RETVAL=1
     else
-        killproc $httpd -HUP
-        RETVAL=$?
+        echo "running."
+        RETVAL=0
     fi
-    echo
+    return $RETVAL
 }
 
-# See how we were called.
 case "$1" in
   start)
+        parselogconfigs
         start
         ;;
   stop)
         stop
         ;;
   status)
-        status $httpd
-        RETVAL=$?
+        parselogconfigs
+        status
         ;;
   restart)
-        stop
-        start
+        parselogconfigs
+        stop && start
         ;;
   reload)
         reload
         ;;
-  graceful|help)
-        $apachectl $@
-        RETVAL=$?
-        ;;
   *)
-        echo $"Usage: $prog {start|stop|restart|condrestart|reload|status|fullstatus|graceful|help|configtest}"
+        echo $"Usage: $prog {start|stop|restart|reload|status}"
         exit 1
 esac
 
