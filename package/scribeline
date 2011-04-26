@@ -86,7 +86,7 @@ stop() {
 }
 reload() {
     echo -n $"Reloading $prog: "
-    ps auxww | grep $scribe_line_py | grep -v grep | awk '{print $2}' | xargs -HUP
+    ps auxww | grep $scribe_line_py | grep -v grep | awk '{print $2}' | xargs kill -HUP
     echo "reset connections."
     echo "To run with new config file, do 'restart'."
     RETVAL=0
