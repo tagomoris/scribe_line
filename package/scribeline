@@ -4,7 +4,7 @@ if [ ! -r /etc/scribeline.conf ]; then
     echo "Config file does not exists: /etc/scribeline.conf"
     exit 1
 fi
-. /etc/scribeline.conf
+source /etc/scribeline.conf
 
 logfile=/var/log/scribe_line.log
 scribe_line_sh=/usr/local/scribe_line/scribe_line.sh
@@ -23,25 +23,28 @@ categories=()
 logfilepaths=()
 items=0
 
-parselogconfigs() {
-    echo "$LOGS" | egrep -v '^[[:space:]]*(#|$)' | while read line; do
-        categories[$items]=`echo $line | awk '{print $1};'`
-        logfilepaths[$items]=`echo $line | awk '{print $2};'`
-        items=$((items + 1))
-    done
-    if [ $PYTHONPATH ]; then
-        CMD="$scribe_line_sh -p $PYTHONPATH"
+for (( i = 0; i < ${#LOGS[@]}; i++ )); do
+    if $(echo ${LOGS[$i]} | egrep -q '^[[:space:]]*(#|$)'); then
+        continue
     fi
-    if [ $SECONDARY_SERVER ]; then
-        SERVERS="$PRIMARY_SERVER $SECONDARY_SERVER"
-    else
-        SERVERS=$PRIMARY_SERVER
-    fi
-}
+    line=${LOGS[$i]}
+    categories[$items]=`echo $line | awk '{print $1};'`
+    logfilepaths[$items]=`echo $line | awk '{print $2};'`
+    items=$((items + 1))
+done
+
+if [ $PYTHONPATH ]; then
+    CMD="$scribe_line_sh -p $PYTHONPATH"
+fi
+if [ $SECONDARY_SERVER ]; then
+    SERVERS="$PRIMARY_SERVER $SECONDARY_SERVER"
+else
+    SERVERS=$PRIMARY_SERVER
+fi
 
 start() {
     echo -n $"Starting $prog: "
-    if [ x"$RUN" = "xfalse" ]; then
+    if [ x"$RUN" != "xtrue" ]; then
         echo "configured not to run."
         RETVAL=0
         return $RETVAL
@@ -106,18 +109,15 @@ status() {
 
 case "$1" in
   start)
-        parselogconfigs
         start
         ;;
   stop)
         stop
         ;;
   status)
-        parselogconfigs
         status
         ;;
   restart)
-        parselogconfigs
         stop && start
         ;;
   reload)
