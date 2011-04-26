@@ -15,10 +15,15 @@ lockfile=/var/run/scribe_line.run
 
 RETVAL=0
 
+CMD=$scribe_line_sh
+SERVERS=""
+NOHUPPATH="/usr/bin/nohup"
+
+categories=()
+logfilepaths=()
+items=0
+
 parselogconfigs() {
-    categories=()
-    logfilepaths=()
-    items=0
     echo $LOGS | egrep -v '^[[:space:]]*(#|$)' | while read line; do
         categories[$items]=`echo $line | awk '{print $1};'`
         logfilepaths[$items]=`echo $line | awk '{print $2};'`
@@ -26,16 +31,11 @@ parselogconfigs() {
     done
     if [ $PYTHONPATH ]; then
         CMD="$scribe_line_sh -p $PYTHONPATH"
-    else
-        CMD=$scribe_line_sh
     fi
     if [ $SECONDARY_SERVER ]; then
         SERVERS="$PRIMARY_SERVER $SECONDARY_SERVER"
     else
         SERVERS=$PRIMARY_SERVER
-    fi
-    if [ ! $NOHUPPATH ]; then
-        $NOHUPPATH="/usr/bin/nohup"
     fi
 }
 
@@ -94,7 +94,11 @@ status() {
         echo "not running correctly."
         RETVAL=1
     else
-        echo "running."
+        if [ $items = 0 ]; then
+            echo "ok."
+        else
+            echo "running."
+        fi
         RETVAL=0
     fi
     return $RETVAL
