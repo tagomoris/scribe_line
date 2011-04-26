@@ -23,13 +23,15 @@ categories=()
 logfilepaths=()
 items=0
 
-for (( i = 0; i < ${#LOGS[@]}; i++ )); do
-    if $(echo ${LOGS[$i]} | egrep -q '^[[:space:]]*(#|$)'); then
+lines=$(echo "$LOGS" | wc -l)
+for (( i = 0; i < $lines; i++ )); do
+    j=$((i + 1))
+    line=$(echo "$LOGS" | head -n $j | tail -1)
+    if echo "$line" | egrep -q '^[[:space:]]*(#|$)'; then
         continue
     fi
-    line=${LOGS[$i]}
-    categories[$items]=`echo $line | awk '{print $1};'`
-    logfilepaths[$items]=`echo $line | awk '{print $2};'`
+    categories[$items]=$(echo $line | awk '{print $1};')
+    logfilepaths[$items]=$(echo $line | awk '{print $2};')
     items=$((items + 1))
 done
 
