@@ -24,7 +24,7 @@ logfilepaths=()
 items=0
 
 parselogconfigs() {
-    echo $LOGS | egrep -v '^[[:space:]]*(#|$)' | while read line; do
+    echo "$LOGS" | egrep -v '^[[:space:]]*(#|$)' | while read line; do
         categories[$items]=`echo $line | awk '{print $1};'`
         logfilepaths[$items]=`echo $line | awk '{print $2};'`
         items=$((items + 1))
