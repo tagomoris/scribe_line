@@ -1,5 +1,5 @@
 %define name scribeline
-%define version 1.0a
+%define version 1.1
 %define prefix /usr/local/scribe_line
 %define _use_internal_dependency_generator 0
 
