@@ -37,7 +37,7 @@ install -m 755 scribe_line.sh scribe_line.py scribe_cat $RPM_BUILD_ROOT%{prefix}
 cp -r thrift fb303 scribe $RPM_BUILD_ROOT%{prefix}
 
 mkdir -p $RPM_BUILD_ROOT%{_sysconfdir}/init.d
-install -m 644 %{Source1} $RPM_BUILD_ROOT%{_sysconfdir}/scribeline.conf
+install -m 644 %{SOURCE1} $RPM_BUILD_ROOT%{_sysconfdir}/scribeline.conf
 install -m 755 package/scribeline $RPM_BUILD_ROOT%{_sysconfdir}/init.d/scribeline
 
 %clean
