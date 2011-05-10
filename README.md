@@ -26,18 +26,10 @@ To install each RHEL/CentOS host, use yum server, or copy and rpm -i on each hos
 
 On each host, do steps below.
 
-1. Download and extract tarball, or clone repository.
-2. Make directory /usr/local/scribe_line .
-3. Copy files and directories to /usr/local/scribe_line .
-    cp -r scribe_line.sh scribe_line.py thrift fb303 scribe /usr/local/scribe_line
-4. Copy config file package/scribeline.conf to /etc .
-    cp package/scribeline.conf /etc
-5. Copy init script to /etc/init.d or rc.d or ....
-    cp package/scribeline /etc/init.d
-6. Check permission -x for each script files.
-    ls -l /usr/local/scribe_line/scribe_line.* /etc/init.d/scribeline
+1. Download and extract tarball, or clone repository, and move into extracted directory.
+2. Do 'make install'.
 
-If you don't want to use init script, you can skip step 5.
+    make install
 
 ## Configure and Run
 
