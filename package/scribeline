@@ -73,7 +73,7 @@ start() {
 }
 stop() {
     echo -n $"Stopping $prog: "
-    ps axuww | grep $scribe_line_py | grep -v grep | awk '{print $2}' | xargs kill -TERM
+    ps -ef | grep $scribe_line_sh | grep -v grep | awk '{print $2}' | xargs echo | sed -e 's/ /,/g' | while read x; do ps -f --pid $x --ppid $x; done | awk '{print $2;}' | grep -v PID | xargs kill -TERM
     sleep 1
     RETVAL=`ps auxww | grep $scribe_line_py | grep -v grep | wc -l`
     if [ $RETVAL = 0 ]; then
