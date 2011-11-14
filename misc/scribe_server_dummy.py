@@ -13,22 +13,28 @@ from thrift.server import TServer
 from scribe import scribe
 from scribe import ttypes
 
-from pprint import pprint
+if len(sys.argv) == 2:
+  port = int(sys.argv[1])
+else:
+  sys.exit('usage (message is stdin): scribe_client_dummy.py port')
 
 class ScribeDummyHandler:
     def __init__(self):
         self.counter = 0
 
     def Log(self, messages):
-        msgs = len(messages)
-        self.counter += msgs
-        print 'RECV:' + str(msgs)
-        pprint(messages)
+        msgs = {}
+        for m in messages:
+            if m.category not in msgs:
+                msgs[m.category] = 0
+            msgs[m.category] += 1
+        for k in msgs.keys():
+            print k + ':' + str(msgs[k])
         return ttypes.ResultCode.OK
 
 handler = ScribeDummyHandler()
 processor = scribe.Processor(handler)
-transport = TSocket.TServerSocket(1463)
+transport = TSocket.TServerSocket(port)
 tfactory = TTransport.TFramedTransportFactory()
 pfactory = TBinaryProtocol.TBinaryProtocolFactory(strictRead=False, strictWrite=False) # non-strict read/write for scribe
 

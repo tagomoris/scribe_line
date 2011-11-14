@@ -22,7 +22,7 @@ elif len(sys.argv) == 4 and sys.argv[1] == '-h':
   else:
     port = 1463
 else:
-  sys.exit('usage (message is stdin): scribe_cat [-h host[:port]] category')
+  sys.exit('usage (message is stdin): scribe_client_dummy.py [-h host[:port]] category')
 
 logentries = []
 while True:
