@@ -18,6 +18,8 @@ if len(sys.argv) == 2:
 else:
   sys.exit('usage (message is stdin): scribe_client_dummy.py port')
 
+from pprint import pprint
+
 class ScribeDummyHandler:
     def __init__(self):
         self.counter = 0
@@ -29,7 +31,8 @@ class ScribeDummyHandler:
                 msgs[m.category] = 0
             msgs[m.category] += 1
         for k in msgs.keys():
-            print k + ':' + str(msgs[k])
+            sys.stdout.write(k + ':' + str(msgs[k]) + "\n")
+        sys.stdout.flush()
         return ttypes.ResultCode.OK
 
 handler = ScribeDummyHandler()
@@ -40,6 +43,4 @@ pfactory = TBinaryProtocol.TBinaryProtocolFactory(strictRead=False, strictWrite=
 
 server = TServer.TSimpleServer(processor, transport, tfactory, pfactory)
 
-print 'Starting scribed dummy server...'
 server.serve()
-print 'done.'
