@@ -118,7 +118,7 @@ def drain_normal():
         line = stdin_obj.read(DEFAULT_READ_BUFFER_SIZE)
         while True:
             newline_pos = line.find("\n")
-            if newline_pos > -1:
+            if newline_pos < 0:
                 break
             pos = newline_pos + 1
             if continuous_line:
@@ -142,7 +142,7 @@ def drain_boost():
             line = stdin_obj.read(DEFAULT_READ_BUFFER_SIZE * DEFAULT_BOOST_MAX_LINES)
             while True:
                 newline_pos = line.find("\n")
-                if newline_pos > -1:
+                if newline_pos < 0:
                     break
                 pos = newline_pos + 1
                 chunk_lines += 1
