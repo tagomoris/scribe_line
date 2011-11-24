@@ -117,12 +117,13 @@ def drain_normal():
     while len(buffered_log_lines) < DEFAULT_SIZE_LOGS_BUFFERED:
         line = stdin_obj.read(DEFAULT_READ_BUFFER_SIZE)
         while(line.find("\n") > -1):
+            pos = line.find("\n") + 1
             if continuous_line:
-                buffered_log_lines.append(continuous_line + line[0:(line.find("\n") + 1)])
+                buffered_log_lines.append(continuous_line + line[0:pos])
                 continuous_line = None
             else:
-                buffered_log_lines.append(line[0:(line.find("\n") + 1)])
-            line = line[(line.find("\n") + 1):]
+                buffered_log_lines.append(line[0:pos])
+            line = line[pos:]
         if len(line) > 0:
             continuous_line = line
         line = None
@@ -137,13 +138,14 @@ def drain_boost():
         while len(buffered_log_lines) < DEFAULT_SIZE_LOGS_BUFFERED:
             line = stdin_obj.read(DEFAULT_READ_BUFFER_SIZE * DEFAULT_BOOST_MAX_LINES)
             while(line.find("\n") > -1):
+                pos = line.find("\n") + 1
                 chunk_lines += 1
                 if continuous_line:
-                    chunk += continuous_line + line[0:(line.find("\n") + 1)]
+                    chunk += continuous_line + line[0:pos]
                     continuous_line = None
                 else:
-                    chunk += line[0:(line.find("\n") + 1)]
-                line = line[(line.find("\n") + 1):]
+                    chunk += line[0:pos]
+                line = line[pos:]
                 if chunk_lines >= DEFAULT_BOOST_MAX_LINES:
                     buffered_log_lines.append(chunk)
                     chunk = ""
