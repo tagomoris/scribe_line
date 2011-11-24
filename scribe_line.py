@@ -164,7 +164,8 @@ def drain_boost():
                 continuous_line = line
             line = None
     except IOError:
-        continuous_line = chunk + continuous_line
+        if chunk or continuous_line:
+            continuous_line = (chunk or '') + (continuous_line or '')
         raise
 
 drain = drain_normal
