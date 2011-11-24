@@ -25,6 +25,8 @@ PYTHON="/usr/bin/python"
 SCRIBE_LINE_CMD=$(dirname $0)"/scribe_line.py"
 DEFAULT_PORT=1463
 
+BOOST_MODE=
+
 function usage {
     cat >&2 <<EOF
 USAGE:
@@ -34,10 +36,11 @@ OPTIONS:
 EOF
 }
 
-while getopts "hp:" flag; do
+while getopts "hbp:" flag; do
     case $flag in
         \?) OPT_ERROR=1;;
         h) usage; exit 0;;
+        b) BOOST_MODE="-b";;
         p) PYTHON="$OPTARG";;
     esac
 done
@@ -100,8 +103,8 @@ if [ x"$OPT_ERROR" != "x" -o x"$ARG_ERROR" != "x" ]; then
 fi
 
 if [ $SECONDARY_UNSPECIFIED ]; then
-    tail -F $tail_file_path | $PYTHON $SCRIBE_LINE_CMD $category $PRIMARY_SERVER $PRIMARY_PORT
+    tail -F $tail_file_path | $PYTHON $SCRIBE_LINE_CMD $BOOST_MODE $category $PRIMARY_SERVER $PRIMARY_PORT
 else
-    tail -F $tail_file_path | $PYTHON $SCRIBE_LINE_CMD $category $PRIMARY_SERVER $PRIMARY_PORT $SECONDARY_SERVER $SECONDARY_PORT
+    tail -F $tail_file_path | $PYTHON $SCRIBE_LINE_CMD $BOOST_MODE $category $PRIMARY_SERVER $PRIMARY_PORT $SECONDARY_SERVER $SECONDARY_PORT
 fi
 exit $?
