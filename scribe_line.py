@@ -210,7 +210,6 @@ def mainloop(host_port_pair_list):
                 log_entries = [scribe.LogEntry(category=category, message=line) for line in buffered_log_lines]
 
                 while True:
-                    sys.stderr.write("RPC entries: %d\n" % len(log_entries))
                     result = client.Log(messages=log_entries)
                     if result == scribe.ResultCode.OK:
                         buffered_log_lines = []
