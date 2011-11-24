@@ -17,7 +17,7 @@
 
 '''scribe_line.py: log transfer script with scribe
 
-[USAGE] tail -f /var/log/any.log | scribe_line.py CATEGORY_NAME HOSTNAME PORT [HOSTNAME2 PORT2 [...]]'''
+[USAGE] tail -f /var/log/any.log | scribe_line.py [-b] CATEGORY_NAME HOSTNAME PORT [HOSTNAME2 PORT2 [...]]'''
 
 import sys
 import os
@@ -39,6 +39,7 @@ DEFAULT_SIZE_LOGS_BUFFERED = 100
 
 DEFAULT_RECONNECT_SECONDS = 1800 # 30min.
 
+DEFAULT_BOOST_MAX_LINES = 25 # 25lines (x200bytes = 5kbytes)
 
 from scribe import scribe
 from thrift.transport import TTransport, TSocket
@@ -53,6 +54,11 @@ fcntl.fcntl(stdin_obj, fcntl.F_SETFL, os.O_NONBLOCK)
 
 if len(sys.argv) < 4:
     sys.exit("Invalid arguments.\n" + __doc__)
+
+boost = False
+if sys.argv[1] == '-b':
+    boost = True
+    del sys.argv[1:2]
 
 category = sys.argv[1]
 connect_to_list = []
@@ -104,6 +110,68 @@ def transport_open(host, port):
 continuous_line = None
 buffered_log_lines = []
 
+def drain_normal():
+    global continuous_line
+    global buffered_log_lines
+    line = None
+    while len(buffered_log_lines) < DEFAULT_SIZE_LOGS_BUFFERED:
+        line = stdin_obj.read(DEFAULT_READ_BUFFER_SIZE)
+        while True:
+            newline_pos = line.find("\n")
+            if newline_pos < 0:
+                break
+            pos = newline_pos + 1
+            if continuous_line:
+                buffered_log_lines.append(continuous_line + line[0:pos])
+                continuous_line = None
+            else:
+                buffered_log_lines.append(line[0:pos])
+            line = line[pos:]
+        if len(line) > 0:
+            continuous_line = line
+        line = None
+
+def drain_boost():
+    global continuous_line
+    global buffered_log_lines
+    line = None
+    chunk = ""
+    chunk_lines = 0
+    try:
+        while len(buffered_log_lines) < DEFAULT_SIZE_LOGS_BUFFERED:
+            line = stdin_obj.read(DEFAULT_READ_BUFFER_SIZE * DEFAULT_BOOST_MAX_LINES)
+            while True:
+                newline_pos = line.find("\n")
+                if newline_pos < 0:
+                    break
+                pos = newline_pos + 1
+                chunk_lines += 1
+                if continuous_line:
+                    chunk += continuous_line + line[0:pos]
+                    continuous_line = None
+                else:
+                    chunk += line[0:pos]
+                line = line[pos:]
+                if chunk_lines >= DEFAULT_BOOST_MAX_LINES:
+                    buffered_log_lines.append(chunk)
+                    chunk = ""
+                    chunk_lines = 0
+            if len(chunk) > 0:
+                buffered_log_lines.append(chunk)
+                chunk = ""
+                chunk_lines = 0
+            if len(line) > 0:
+                continuous_line = line
+            line = None
+    except IOError:
+        if chunk or continuous_line:
+            continuous_line = (chunk or '') + (continuous_line or '')
+        raise
+
+drain = drain_normal
+if boost:
+    drain = drain_boost
+
 @with_exception_trap
 def mainloop(host_port_pair_list):
     transport = None
@@ -128,27 +196,17 @@ def mainloop(host_port_pair_list):
                     break
 
                 if len(buffered_log_lines) < 1:
-                    line = None
                     try:
-                        while len(buffered_log_lines) < DEFAULT_SIZE_LOGS_BUFFERED:
-                            line = stdin_obj.read(DEFAULT_READ_BUFFER_SIZE)
-                            while(line.find("\n") > -1):
-                                if continuous_line:
-                                    buffered_log_lines.append(continuous_line + line[0:(line.find("\n") + 1)])
-                                    continuous_line = None
-                                else:
-                                    buffered_log_lines.append(line[0:(line.find("\n") + 1)])
-                                line = line[(line.find("\n") + 1):]
-                            if len(line) > 0:
-                                if continuous_line:
-                                    continuous_line += line
-                                else:
-                                    continuous_line = line
-                            line = None
+                        drain()
                     except IOError:
                         if len(buffered_log_lines) == 0:
                             time.sleep(DEFAULT_RETRY_LOG_WATCH)
                             continue
+
+                if len(buffered_log_lines) < 1:
+                    time.sleep(DEFAULT_RETRY_LOG_WATCH)
+                    continue
+
                 log_entries = [scribe.LogEntry(category=category, message=line) for line in buffered_log_lines]
 
                 while True:
