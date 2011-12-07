@@ -99,8 +99,13 @@ reload() {
 }
 status() {
     echo -n "Configured logs for $prog: $items, "
-    procs=`ps auxww | grep $scribe_line_py | grep -v grep | wc -l`
-    if [ $procs != $items ]; then
+    CHECK_RESULT=($(ps axuww | grep scribe_line.sh | grep -v grep | awk '{print $2;}' | while read ppid; do
+                childprocs=`ps --ppid $ppid | wc -l`
+                if [ $childprocs -ne 3 ]; then
+                    echo "hit"
+                fi
+            done))
+    if [ "$CHECK_RESULT" != '' ]; then
         echo "not running correctly."
         RETVAL=1
     else
