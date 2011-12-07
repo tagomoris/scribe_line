@@ -1,5 +1,5 @@
 %define name scribeline
-%define version 1.1
+%define version 1.4
 %define prefix /usr/local/scribe_line
 %define _use_internal_dependency_generator 0
 
@@ -44,9 +44,9 @@ install -m 755 package/scribeline $RPM_BUILD_ROOT%{_sysconfdir}/init.d/scribelin
 rm -rf $RPM_BUILD_ROOT
 
 %files
+%config(noreplace) /etc/scribeline.conf
 %defattr(-,root,root,-)
 %{prefix}/*
-%{_sysconfdir}/scribeline.conf
 %{_sysconfdir}/init.d/scribeline
 %doc README
 
