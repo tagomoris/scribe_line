@@ -99,6 +99,11 @@ reload() {
 }
 status() {
     echo -n "Configured logs for $prog: $items, "
+    RUNNING_LINES=$(ps axuww | grep scribe_line.sh | grep -v grep | wc -l)
+    if [ "$RUNNING_LINES" -ne $items ] ; then
+        echo "one or more not running."
+        return 1
+    fi
     CHECK_RESULT=($(ps axuww | grep scribe_line.sh | grep -v grep | awk '{print $2;}' | while read ppid; do
                 childprocs=`ps --ppid $ppid | wc -l`
                 if [ $childprocs -ne 3 ]; then
