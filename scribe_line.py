@@ -66,6 +66,9 @@ for i in range(2, len(sys.argv), 2):
     connect_to_list.append([sys.argv[i], sys.argv[i+1]])
 
 
+class BrokenPipeException(Exception):
+    pass
+
 class ReloadSignalException(Exception):
     pass
 
@@ -113,9 +116,18 @@ buffered_log_lines = []
 def drain_normal():
     global continuous_line
     global buffered_log_lines
+    global stdin_obj
     line = None
     while len(buffered_log_lines) < DEFAULT_SIZE_LOGS_BUFFERED:
         line = stdin_obj.read(DEFAULT_READ_BUFFER_SIZE)
+        if len(line) < 1: # maybe eof, means broken input pipe (tail process died)
+            try:
+                stdin_obj.close()
+                stdin_obj = os.fdopen(0, 'r', 0)
+                fcntl.fcntl(stdin_obj, fcntl.F_SETFL, os.O_NONBLOCK)
+            except OSError:
+                raise BrokenPipeException, 'broken input pipe, maybe tail process died'
+            continue
         while True:
             newline_pos = line.find("\n")
             if newline_pos < 0:
@@ -134,12 +146,21 @@ def drain_normal():
 def drain_boost():
     global continuous_line
     global buffered_log_lines
+    global stdin_obj
     line = None
     chunk = ""
     chunk_lines = 0
     try:
         while len(buffered_log_lines) < DEFAULT_SIZE_LOGS_BUFFERED:
             line = stdin_obj.read(DEFAULT_READ_BUFFER_SIZE * DEFAULT_BOOST_MAX_LINES)
+            if len(line) < 1: # maybe eof, means broken input pipe (tail process died)
+                try:
+                    stdin_obj.close()
+                    stdin_obj = os.fdopen(0, 'r', 0)
+                    fcntl.fcntl(stdin_obj, fcntl.F_SETFL, os.O_NONBLOCK)
+                except OSError:
+                    raise BrokenPipeException, 'broken input pipe, maybe tail process died'
+                continue
             while True:
                 newline_pos = line.find("\n")
                 if newline_pos < 0:
