@@ -104,7 +104,7 @@ fi
 
 OPT_SLEEP_INTERVAL=
 tail -s 1 /dev/null >/dev/null 2>&1
-if [ $? eq 0 ]; then
+if [ x"$?" = "x0" ]; then
     OPT_SLEEP_INTERVAL="-s 0.1"
 fi
 
