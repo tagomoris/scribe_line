@@ -102,9 +102,15 @@ if [ x"$OPT_ERROR" != "x" -o x"$ARG_ERROR" != "x" ]; then
     exit 1
 fi
 
+OPT_SLEEP_INTERVAL=
+tail -s 1 /dev/null >/dev/null 2>&1
+if [ $? eq 0 ]; then
+    OPT_SLEEP_INTERVAL="-s 0.1"
+fi
+
 if [ $SECONDARY_UNSPECIFIED ]; then
-    tail -F $tail_file_path | $PYTHON $SCRIBE_LINE_CMD $BOOST_MODE $category $PRIMARY_SERVER $PRIMARY_PORT
+    tail $OPT_SLEEP_INTERVAL -F $tail_file_path | $PYTHON $SCRIBE_LINE_CMD $BOOST_MODE $category $PRIMARY_SERVER $PRIMARY_PORT
 else
-    tail -F $tail_file_path | $PYTHON $SCRIBE_LINE_CMD $BOOST_MODE $category $PRIMARY_SERVER $PRIMARY_PORT $SECONDARY_SERVER $SECONDARY_PORT
+    tail $OPT_SLEEP_INTERVAL -F $tail_file_path | $PYTHON $SCRIBE_LINE_CMD $BOOST_MODE $category $PRIMARY_SERVER $PRIMARY_PORT $SECONDARY_SERVER $SECONDARY_PORT
 fi
 exit $?
