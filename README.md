@@ -6,6 +6,10 @@
 
 'scribeline' is a log transfer agent to scribed server. Works with python (2.4 or later).
 
+### VERSION
+
+1.6.2
+
 ## INSTALL
 
 On RHEL/CentOS, you can use .spec file to build rpm with your customized default config file.
