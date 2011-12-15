@@ -123,6 +123,7 @@ def drain_normal():
         if len(line) < 1: # maybe eof, means broken input pipe (tail process died)
             try:
                 stdin_obj.close()
+                print "reopening stdin ..."
                 stdin_obj = os.fdopen(0, 'r', 0)
                 fcntl.fcntl(stdin_obj, fcntl.F_SETFL, os.O_NONBLOCK)
             except OSError:
@@ -156,6 +157,7 @@ def drain_boost():
             if len(line) < 1: # maybe eof, means broken input pipe (tail process died)
                 try:
                     stdin_obj.close()
+                    print "reopening stdin ..."
                     stdin_obj = os.fdopen(0, 'r', 0)
                     fcntl.fcntl(stdin_obj, fcntl.F_SETFL, os.O_NONBLOCK)
                 except OSError:
@@ -247,3 +249,5 @@ def mainloop(host_port_pair_list):
 while True:
     mainloop(connect_to_list)
     time.sleep(DEFAULT_RETRY_CONNECT)
+
+print "scribe_line.py exiting... why?"
