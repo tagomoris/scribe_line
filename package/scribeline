@@ -66,7 +66,7 @@ start() {
     done
     sleep 1
     procs=`ps auxww | grep $scribe_line_py | grep -v grep | wc -l`
-    if [ $procs != $items ]; then
+    if [ x"$procs" != "x"$items ]; then
         echo "not started correctly."
         RETVAL=1
     else
@@ -78,7 +78,10 @@ start() {
 }
 stop() {
     echo -n $"Stopping $prog: "
-    ps -ef | grep $scribe_line_sh | grep -v grep | awk '{print $2}' | xargs echo | sed -e 's/ /,/g' | while read x; do ps -f --pid $x --ppid $x; done | awk '{print $2;}' | grep -v PID | xargs kill -TERM
+    pprocs=$(ps -ef | grep $scribe_line_sh | grep -v grep | awk '{print $2}' | xargs echo | sed -e 's/ /,/g')
+    if [ x"$pprocs" != "x" ]; then
+        ps -f --pid $pprocs --ppid $pprocs | awk '{print $2;}' | grep -v PID | xargs kill -TERM
+    fi
     sleep 1
     RETVAL=`ps auxww | grep $scribe_line_py | grep -v grep | wc -l`
     if [ $RETVAL = 0 ]; then
