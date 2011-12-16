@@ -108,6 +108,10 @@ if [ x"$?" = "x0" ]; then
     OPT_SLEEP_INTERVAL="-s 0.1"
 fi
 
+exec > /dev/null
+exec < /dev/null
+exec 2>&1
+
 if [ $SECONDARY_UNSPECIFIED ]; then
     tail $OPT_SLEEP_INTERVAL -F $tail_file_path | $PYTHON $SCRIBE_LINE_CMD $BOOST_MODE $category $PRIMARY_SERVER $PRIMARY_PORT
 else
