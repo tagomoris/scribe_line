@@ -85,6 +85,8 @@ def with_exception_trap(func):
         except socket.error, e:
             if e[0] == errno.EPIPE:
                 pass
+            elif e[0] == errno.ECONNRESET:
+                pass
             else:
                 raise e
             return None
