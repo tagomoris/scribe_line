@@ -35,6 +35,8 @@ USAGE:
 scribe_line.sh [options] category /path/to/logfile primary_server[:port] [secondary_server[:port]]
 OPTIONS:
    -p pythonpath
+   -n nice
+   -r read_buffer_bytes
 EOF
 }
 
