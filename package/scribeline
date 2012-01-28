@@ -44,14 +44,14 @@ else
     SERVERS=$PRIMARY_SERVER
 fi
 if [ "x"$PROCESS_NICE != "x" ]; then
-    $NICE_OPT="-n "$PROCESS_NICE
+    NICE_OPT="-n "$PROCESS_NICE
 else
-    $NICE_OPT=
+    NICE_OPT=
 fi
 if [ "x"$READ_BUFFER_SIZE != "x" ]; then
-    $BUF_OPT="-r "$READ_BUFFER_SIZE
+    BUF_OPT="-r "$READ_BUFFER_SIZE
 else
-    $BUF_OPT=
+    BUF_OPT=
 fi
 
 start() {
