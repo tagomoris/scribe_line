@@ -22,6 +22,8 @@
 import sys
 import os
 import time
+import errno
+import socket
 import fcntl
 # import functools
 import signal
@@ -80,6 +82,12 @@ def with_exception_trap(func):
     def wrapping_try_except(*args, **kwargs):
         try:
             return func(*args, **kwargs)
+        except socket.error, e:
+            if e[0] == errno.EPIPE:
+                pass
+            else:
+                raise e
+            return None
         except TTransportException, ttex:
             if ttex.type == TTransportException.UNKNOWN:
                 pass
