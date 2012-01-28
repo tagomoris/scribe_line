@@ -38,7 +38,7 @@ OPTIONS:
 EOF
 }
 
-while getopts "hbp:" flag; do
+while getopts "hp:n:r:" flag; do
     case $flag in
         \?) OPT_ERROR=1;;
         h) usage; exit 0;;
@@ -87,8 +87,9 @@ else
         PRIMARY_PORT=$DEFAULT_PORT
     fi
 fi
-
 SERVERS="$PRIMARY_SERVER $PRIMARY_PORT"
+
+secondary=$4
 if [ x"$secondary" != "x" ]; then
     SECONDARY_SERVER=`echo $secondary | cut -d : -s -f 1`
     SECONDARY_PORT=`echo $secondary | cut -d : -s -f 2`
@@ -115,7 +116,7 @@ if [ x"$?" = "x0" ]; then
     OPT_SLEEP_INTERVAL="-s 0.05"
 fi
 
-exec > /dev/null
+exec > /var/log/scribe_line.log
 exec < /dev/null
 exec 2>&1
 
