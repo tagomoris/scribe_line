@@ -17,7 +17,7 @@
 
 '''scribe_line.py: log transfer script with scribe
 
-[USAGE] tail -f /var/log/any.log | scribe_line.py [-b] CATEGORY_NAME HOSTNAME PORT [HOSTNAME2 PORT2 [...]]'''
+[USAGE] tail -f /var/log/any.log | scribe_line.py [-r READBUF_SIZE] CATEGORY_NAME HOSTNAME PORT [HOSTNAME2 PORT2 [...]]'''
 
 import sys
 import os
@@ -31,7 +31,7 @@ random.seed()
 
 sys.path = [os.path.dirname(__file__)] + sys.path
 
-DEFAULT_READ_BUFFER_SIZE = 256
+DEFAULT_READ_BUFFER_SIZE = 20480
 
 DEFAULT_RETRY_LOG_WATCH = 0.1
 DEFAULT_RETRY_CONNECT = 3
@@ -39,32 +39,29 @@ DEFAULT_SIZE_LOGS_BUFFERED = 100
 
 DEFAULT_RECONNECT_SECONDS = 1800 # 30min.
 
-DEFAULT_BOOST_MAX_LINES = 25 # 25lines (x200bytes = 5kbytes)
-
 from scribe import scribe
 from thrift.transport import TTransport, TSocket
 from thrift.protocol import TBinaryProtocol
 from thrift.transport.TTransport import TTransportException
 
-# disable buffering and re-open in NONBLOCK MODE
-sys.stdin.close()
-stdin_obj = os.fdopen(0, 'r', 0)
-fcntl.fcntl(stdin_obj, fcntl.F_SETFL, os.O_NONBLOCK)
-
+## OPTIONS
+READ_BUFFER_SIZE = DEFAULT_READ_BUFFER_SIZE
+if sys.argv[1] == '-r':
+    READ_BUFFER_SIZE = int(sys.argv[2])
+    del sys.argv[1:3]
 
 if len(sys.argv) < 4:
     sys.exit("Invalid arguments.\n" + __doc__)
-
-boost = False
-if sys.argv[1] == '-b':
-    boost = True
-    del sys.argv[1:2]
 
 category = sys.argv[1]
 connect_to_list = []
 for i in range(2, len(sys.argv), 2):
     connect_to_list.append([sys.argv[i], sys.argv[i+1]])
 
+# disable buffering and re-open in NONBLOCK MODE
+sys.stdin.close()
+stdin_obj = os.fdopen(0, 'r', 0)
+fcntl.fcntl(stdin_obj, fcntl.F_SETFL, os.O_NONBLOCK)
 
 class BrokenPipeException(Exception):
     pass
@@ -113,13 +110,13 @@ def transport_open(host, port):
 continuous_line = None
 buffered_log_lines = []
 
-def drain_normal():
+def drain():
     global continuous_line
     global buffered_log_lines
     global stdin_obj
     line = None
     while len(buffered_log_lines) < DEFAULT_SIZE_LOGS_BUFFERED:
-        line = stdin_obj.read(DEFAULT_READ_BUFFER_SIZE)
+        line = stdin_obj.read(READ_BUFFER_SIZE)
         if len(line) < 1: # maybe eof, means broken input pipe (tail process died)
             try:
                 stdin_obj.close()
@@ -143,57 +140,6 @@ def drain_normal():
         if len(line) > 0:
             continuous_line = line
         line = None
-
-def drain_boost():
-    global continuous_line
-    global buffered_log_lines
-    global stdin_obj
-    line = None
-    chunk = ""
-    chunk_lines = 0
-    try:
-        while len(buffered_log_lines) < DEFAULT_SIZE_LOGS_BUFFERED:
-            line = stdin_obj.read(DEFAULT_READ_BUFFER_SIZE * DEFAULT_BOOST_MAX_LINES)
-            if len(line) < 1: # maybe eof, means broken input pipe (tail process died)
-                try:
-                    stdin_obj.close()
-                    print "reopening stdin ..."
-                    stdin_obj = os.fdopen(0, 'r', 0)
-                    fcntl.fcntl(stdin_obj, fcntl.F_SETFL, os.O_NONBLOCK)
-                except OSError:
-                    raise BrokenPipeException, 'broken input pipe, maybe tail process died'
-                continue
-            while True:
-                newline_pos = line.find("\n")
-                if newline_pos < 0:
-                    break
-                pos = newline_pos + 1
-                chunk_lines += 1
-                if continuous_line:
-                    chunk += continuous_line + line[0:pos]
-                    continuous_line = None
-                else:
-                    chunk += line[0:pos]
-                line = line[pos:]
-                if chunk_lines >= DEFAULT_BOOST_MAX_LINES:
-                    buffered_log_lines.append(chunk)
-                    chunk = ""
-                    chunk_lines = 0
-            if len(chunk) > 0:
-                buffered_log_lines.append(chunk)
-                chunk = ""
-                chunk_lines = 0
-            if len(line) > 0:
-                continuous_line = line
-            line = None
-    except IOError:
-        if chunk or continuous_line:
-            continuous_line = (chunk or '') + (continuous_line or '')
-        raise
-
-drain = drain_normal
-if boost:
-    drain = drain_boost
 
 @with_exception_trap
 def mainloop(host_port_pair_list):

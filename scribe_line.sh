@@ -19,6 +19,8 @@
 # scribe_line.sh [options] category /path/to/logfile primary_server[:port] [secondary_server[:port]]
 # OPTIONS:
 #    -p pythonpath
+#    -n nice
+#    -r read_buffer_bytes
 
 PYTHON="/usr/bin/python"
 
@@ -40,8 +42,9 @@ while getopts "hbp:" flag; do
     case $flag in
         \?) OPT_ERROR=1;;
         h) usage; exit 0;;
-        b) BOOST_MODE="-b";;
         p) PYTHON="$OPTARG";;
+        n) NICE="$OPTARG" ;;
+        r) READBUF="$OPTARG" ;;
     esac
 done
 
@@ -85,16 +88,15 @@ else
     fi
 fi
 
-secondary=$4
-if [ x"$secondary" = "x" ]; then
-    SECONDARY_UNSPECIFIED=1
-else
+SERVERS="$PRIMARY_SERVER $PRIMARY_PORT"
+if [ x"$secondary" != "x" ]; then
     SECONDARY_SERVER=`echo $secondary | cut -d : -s -f 1`
     SECONDARY_PORT=`echo $secondary | cut -d : -s -f 2`
     if [ x"$SECONDARY_SERVER" = "x" ]; then
         SECONDARY_SERVER=$secondary
         SECONDARY_PORT=$DEFAULT_PORT
     fi
+    SERVERS="$SERVERS $SECONDARY_SERVER $SECONDARY_PORT"
 fi
 
 if [ x"$OPT_ERROR" != "x" -o x"$ARG_ERROR" != "x" ]; then
@@ -102,19 +104,25 @@ if [ x"$OPT_ERROR" != "x" -o x"$ARG_ERROR" != "x" ]; then
     exit 1
 fi
 
+OPTS=
+if [ "x"$READBUF != "x" ]; then
+    OPTS="-r $READBUF"
+fi
+
 OPT_SLEEP_INTERVAL=
 tail -s 1 /dev/null >/dev/null 2>&1
 if [ x"$?" = "x0" ]; then
-    OPT_SLEEP_INTERVAL="-s 0.1"
+    OPT_SLEEP_INTERVAL="-s 0.05"
 fi
 
 exec > /dev/null
 exec < /dev/null
 exec 2>&1
 
-if [ $SECONDARY_UNSPECIFIED ]; then
-    tail $OPT_SLEEP_INTERVAL -F $tail_file_path | $PYTHON $SCRIBE_LINE_CMD $BOOST_MODE $category $PRIMARY_SERVER $PRIMARY_PORT
+if [ "x"$NICE == "x" ]; then
+    tail $OPT_SLEEP_INTERVAL -F $tail_file_path | $PYTHON $SCRIBE_LINE_CMD $OPTS $category $SERVERS
 else
-    tail $OPT_SLEEP_INTERVAL -F $tail_file_path | $PYTHON $SCRIBE_LINE_CMD $BOOST_MODE $category $PRIMARY_SERVER $PRIMARY_PORT $SECONDARY_SERVER $SECONDARY_PORT
+    nice -n $NICE tail $OPT_SLEEP_INTERVAL -F $tail_file_path | nice -n $NICE $PYTHON $SCRIBE_LINE_CMD $OPTS $category $SERVERS
 fi
+
 exit $?

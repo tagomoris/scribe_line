@@ -43,10 +43,15 @@ if [ $SECONDARY_SERVER ]; then
 else
     SERVERS=$PRIMARY_SERVER
 fi
-if [ x"$BOOST" = "xon" ]; then
-    BOOST_OPT="-b"
+if [ "x"$PROCESS_NICE != "x" ]; then
+    $NICE_OPT="-n "$PROCESS_NICE
 else
-    BOOST_OPT=""
+    $NICE_OPT=
+fi
+if [ "x"$READ_BUFFER_SIZE != "x" ]; then
+    $BUF_OPT="-r "$READ_BUFFER_SIZE
+else
+    $BUF_OPT=
 fi
 
 start() {
@@ -62,7 +67,7 @@ start() {
         return $RETVAL
     fi
     for (( i = 0; i < $items; i++ )); do
-        $NOHUPPATH $CMD $BOOST_OPT ${categories[$i]} ${logfilepaths[$i]} $SERVERS >> $logfile &
+        $NOHUPPATH $CMD $NICE_OPT $BUF_OPT ${categories[$i]} ${logfilepaths[$i]} $SERVERS >> $logfile &
     done
     sleep 1
     procs=`ps auxww | grep $scribe_line_py | grep -v grep | wc -l`
