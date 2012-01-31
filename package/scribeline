@@ -67,9 +67,6 @@ else
     SERVERS=$PRIMARY_SERVER
 fi
 
-echo $SERVERS
-exit 1
-
 if [ "x"$PROCESS_NICE != "x" ]; then
     NICE_OPT="-n "$PROCESS_NICE
 else
