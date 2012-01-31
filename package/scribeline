@@ -38,11 +38,38 @@ done
 if [ $PYTHONPATH ]; then
     CMD="$scribe_line_sh -p $PYTHONPATH"
 fi
+
+if [ "x"$PRIMARY_SERVER = "x" ]; then
+    declare -i PRIMARIES
+    PRIMARIES=$(echo "$PRIMARY_SERVERS" | wc -l)
+    if [ $PRIMARIES -gt 0 ]; then
+        declare -i PRIMARY_INDEX
+        PRIMARY_INDEX=$(( $RANDOM % $PRIMARIES + 1))
+        PRIMARY_SERVER=$(echo "$PRIMARY_SERVERS" | head -n $PRIMARY_INDEX | tail -1)
+    fi
+    if [ "x"$PRIMARY_SERVER = "x" ]; then
+        echo "both PRIMARY_SERVER and PRIMARY_SERVERS not found"
+        exit 1
+    fi
+fi
+if [ "x"$SECONDARY_SERVER = "x" ]; then
+    declare -i SECONDARIES
+    SECONDARIES=$(echo "$SECONDARY_SERVERS" | wc -l)
+    if [ $SECONDARIES -gt 0 ]; then
+        declare -i SECONDARY_INDEX
+        SECONDARY_INDEX=$(( $RANDOM % $SECONDARIES + 1 ))
+        SECONDARY_SERVER=$(echo "$SECONDARY_SERVERS" | head -n $SECONDARY_INDEX | tail -1)
+    fi
+fi
 if [ $SECONDARY_SERVER ]; then
     SERVERS="$PRIMARY_SERVER $SECONDARY_SERVER"
 else
     SERVERS=$PRIMARY_SERVER
 fi
+
+echo $SERVERS
+exit 1
+
 if [ "x"$PROCESS_NICE != "x" ]; then
     NICE_OPT="-n "$PROCESS_NICE
 else
